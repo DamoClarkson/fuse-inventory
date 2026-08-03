@@ -266,6 +266,40 @@ public class SecretProviderController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("{providerId}/app-configuration/referenced-secret")]
+    [SwaggerOperation(OperationId = "appConfigurationRevealReferencedSecret")]
+    [RequirePermissionKey(SecretProviderPermissions.RevealSecretKey)]
+    [ProducesResponseType(200, Type = typeof(ResolvedAppConfigurationReferenceSecretResponse))]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public async Task<ActionResult<ResolvedAppConfigurationReferenceSecretResponse>> RevealAppConfigurationReferencedSecret(
+        [FromRoute] Guid providerId,
+        [FromQuery] string key,
+        [FromQuery] string? label = null)
+    {
+        var username = User.GetUsername();
+        if (string.IsNullOrEmpty(username))
+            return new UnauthorizedResult();
+
+        var result = await _appConfigurationOperationService.RevealReferencedSecretAsync(
+            providerId,
+            key,
+            label,
+            username,
+            User.GetPrincipalId());
+
+        if (!result.IsSuccess)
+        {
+            return result.ErrorType switch
+            {
+                ErrorType.NotFound => NotFound(new { error = result.Error }),
+                _ => BadRequest(new { error = result.Error })
+            };
+        }
+
+        return Ok(result.Value!);
+    }
+
     [HttpPut("{providerId}/app-configuration")]
     [SwaggerOperation(OperationId = "appConfigurationSet")]
     [RequirePermissionKey(SecretProviderPermissions.AppConfigCreateKey, SecretProviderPermissions.AppConfigUpdateKey)]

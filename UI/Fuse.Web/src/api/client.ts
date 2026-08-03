@@ -20,7 +20,7 @@ export interface IFuseApiClient {
     accountAll(signal?: AbortSignal): Promise<Account[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     accountPOST(body: CreateAccount | undefined, signal?: AbortSignal): Promise<Account>;
@@ -31,7 +31,7 @@ export interface IFuseApiClient {
     accountGET(id: string, signal?: AbortSignal): Promise<Account>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     accountPUT(id: string, body: UpdateAccount | undefined, signal?: AbortSignal): Promise<Account>;
@@ -57,19 +57,19 @@ export interface IFuseApiClient {
     accountCloneTargets(id: string, signal?: AbortSignal): Promise<CloneTarget[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     accountClone(id: string, body: CloneAccount | undefined, signal?: AbortSignal): Promise<Account[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     grantPOST(accountId: string, body: CreateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant>;
@@ -80,21 +80,21 @@ export interface IFuseApiClient {
     grantDELETE(accountId: string, grantId: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param startTime (optional)
-     * @param endTime (optional)
-     * @param entityType (optional)
-     * @param entityId (optional)
-     * @param userId (optional)
-     * @param userName (optional)
-     * @param page (optional)
-     * @param pageSize (optional)
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param entityType (optional) 
+     * @param entityId (optional) 
+     * @param userId (optional) 
+     * @param userName (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
     activity(startTime: Date | undefined, endTime: Date | undefined, entityType: EntityType | undefined, entityId: string | undefined, userId: string | undefined, userName: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult>;
 
     /**
-     * @param page (optional)
-     * @param pageSize (optional)
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
     activityByEntity(entityType: EntityType, entityId: string, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult>;
@@ -105,7 +105,7 @@ export interface IFuseApiClient {
     apiKeyAll(signal?: AbortSignal): Promise<ApiKeyInfo[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     apiKeyPOST(body: CreateApiKey | undefined, signal?: AbortSignal): Promise<ApiKeyCreatedResult>;
@@ -126,7 +126,7 @@ export interface IFuseApiClient {
     applicationAll(signal?: AbortSignal): Promise<Application[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     applicationPOST(body: CreateApplication | undefined, signal?: AbortSignal): Promise<Application>;
@@ -147,7 +147,7 @@ export interface IFuseApiClient {
     applicationGET(id: string, signal?: AbortSignal): Promise<Application>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     applicationPUT(id: string, body: UpdateApplication | undefined, signal?: AbortSignal): Promise<Application>;
@@ -158,13 +158,13 @@ export interface IFuseApiClient {
     applicationDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     instancesPOST(appId: string, body: CreateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance>;
@@ -185,13 +185,13 @@ export interface IFuseApiClient {
     instanceApiKey(appId: string, instanceId: string, signal?: AbortSignal): Promise<string>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline>;
@@ -202,13 +202,13 @@ export interface IFuseApiClient {
     pipelinesDELETE(appId: string, pipelineId: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency>;
@@ -224,21 +224,21 @@ export interface IFuseApiClient {
     getAppSettings(signal?: AbortSignal): Promise<AppSettings>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return No Content
      */
     updateAppSettings(body: AppSettings | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param startTime (optional)
-     * @param endTime (optional)
-     * @param action (optional)
-     * @param area (optional)
-     * @param userName (optional)
-     * @param entityId (optional)
-     * @param searchText (optional)
-     * @param page (optional)
-     * @param pageSize (optional)
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param action (optional) 
+     * @param area (optional) 
+     * @param userName (optional) 
+     * @param entityId (optional) 
+     * @param searchText (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
     audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult>;
@@ -259,20 +259,20 @@ export interface IFuseApiClient {
     areas(signal?: AbortSignal): Promise<string[]>;
 
     /**
-     * @param format (optional)
+     * @param format (optional) 
      * @return OK
      */
     export(format: string | undefined, signal?: AbortSignal): Promise<FileResponse>;
 
     /**
-     * @param format (optional)
+     * @param format (optional) 
      * @return OK
      */
     template(format: string | undefined, signal?: AbortSignal): Promise<FileResponse>;
 
     /**
-     * @param format (optional)
-     * @param file (optional)
+     * @param format (optional) 
+     * @param file (optional) 
      * @return OK
      */
     importPOST(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void>;
@@ -283,7 +283,7 @@ export interface IFuseApiClient {
     dataStoreAll(signal?: AbortSignal): Promise<DataStore[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     dataStorePOST(body: CreateDataStore | undefined, signal?: AbortSignal): Promise<DataStore>;
@@ -294,7 +294,7 @@ export interface IFuseApiClient {
     dataStoreGET(id: string, signal?: AbortSignal): Promise<DataStore>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     dataStorePUT(id: string, body: UpdateDataStore | undefined, signal?: AbortSignal): Promise<DataStore>;
@@ -310,13 +310,13 @@ export interface IFuseApiClient {
     environmentAll(signal?: AbortSignal): Promise<EnvironmentInfo[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     environmentPOST(body: CreateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     environmentPUT(id: string, body: UpdateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo>;
@@ -327,7 +327,7 @@ export interface IFuseApiClient {
     environmentDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number>;
@@ -338,7 +338,7 @@ export interface IFuseApiClient {
     externalResourceAll(signal?: AbortSignal): Promise<ExternalResource[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     externalResourcePOST(body: CreateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource>;
@@ -349,7 +349,7 @@ export interface IFuseApiClient {
     externalResourceGET(id: string, signal?: AbortSignal): Promise<ExternalResource>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     externalResourcePUT(id: string, body: UpdateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource>;
@@ -390,7 +390,7 @@ export interface IFuseApiClient {
     identityAll(signal?: AbortSignal): Promise<Identity[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
@@ -401,7 +401,7 @@ export interface IFuseApiClient {
     identityGET(id: string, signal?: AbortSignal): Promise<Identity>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
@@ -417,19 +417,19 @@ export interface IFuseApiClient {
     identityCloneTargets(id: string, signal?: AbortSignal): Promise<CloneTarget[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     identityClone(id: string, body: CloneIdentity | undefined, signal?: AbortSignal): Promise<Identity[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
@@ -445,7 +445,7 @@ export interface IFuseApiClient {
     kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
@@ -456,7 +456,7 @@ export interface IFuseApiClient {
     kumaIntegrationGET(id: string, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
@@ -472,7 +472,7 @@ export interface IFuseApiClient {
     getLicenseStatus(signal?: AbortSignal): Promise<LicenseStatusResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     setLicense(body: SetLicenseRequest | undefined, signal?: AbortSignal): Promise<LicenseStatusResponse>;
@@ -483,23 +483,23 @@ export interface IFuseApiClient {
     refreshLicense(signal?: AbortSignal): Promise<LicenseStatusResponse>;
 
     /**
-     * @param minLevel (optional)
-     * @param area (optional)
-     * @param startTime (optional)
-     * @param endTime (optional)
-     * @param searchText (optional)
-     * @param page (optional)
-     * @param pageSize (optional)
+     * @param minLevel (optional) 
+     * @param area (optional) 
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param searchText (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
     querySystemLogs(minLevel: LogLevel | undefined, area: string | undefined, startTime: Date | undefined, endTime: Date | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<SystemLogResult>;
 
     /**
-     * @param minLevel (optional)
-     * @param area (optional)
-     * @param startTime (optional)
-     * @param endTime (optional)
-     * @param searchText (optional)
+     * @param minLevel (optional) 
+     * @param area (optional) 
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param searchText (optional) 
      * @return OK
      */
     getSystemLogCounts(minLevel: LogLevel | undefined, area: string | undefined, startTime: Date | undefined, endTime: Date | undefined, searchText: string | undefined, signal?: AbortSignal): Promise<SystemLogCounts>;
@@ -520,7 +520,7 @@ export interface IFuseApiClient {
     messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
@@ -531,7 +531,7 @@ export interface IFuseApiClient {
     messageBrokerGET(id: string, signal?: AbortSignal): Promise<MessageBroker>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
@@ -544,10 +544,10 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    progressGET(signal?: AbortSignal): Promise<UserGuideProgress>;
+    progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     progressPUTPUT(body: UpdateGuideProgress | undefined, signal?: AbortSignal): Promise<UserGuideProgress>;
@@ -558,7 +558,7 @@ export interface IFuseApiClient {
     passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
@@ -574,7 +574,7 @@ export interface IFuseApiClient {
     platformAll(signal?: AbortSignal): Promise<Platform[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
@@ -585,7 +585,7 @@ export interface IFuseApiClient {
     platformGET(id: string, signal?: AbortSignal): Promise<Platform>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
@@ -601,7 +601,7 @@ export interface IFuseApiClient {
     positionAll(signal?: AbortSignal): Promise<Position[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     positionPOST(body: CreatePosition | undefined, signal?: AbortSignal): Promise<Position>;
@@ -612,7 +612,7 @@ export interface IFuseApiClient {
     positionGET(id: string, signal?: AbortSignal): Promise<Position>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     positionPUT(id: string, body: UpdatePosition | undefined, signal?: AbortSignal): Promise<Position>;
@@ -628,7 +628,7 @@ export interface IFuseApiClient {
     responsibilityAssignmentAll(applicationId: string, signal?: AbortSignal): Promise<ResponsibilityAssignment[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     responsibilityAssignmentPOST(applicationId: string, body: CreateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
@@ -639,7 +639,7 @@ export interface IFuseApiClient {
     responsibilityAssignmentGET(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     responsibilityAssignmentPUT(applicationId: string, id: string, body: UpdateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
@@ -655,7 +655,7 @@ export interface IFuseApiClient {
     responsibilityTypeAll(signal?: AbortSignal): Promise<ResponsibilityType[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     responsibilityTypePOST(body: CreateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType>;
@@ -666,7 +666,7 @@ export interface IFuseApiClient {
     responsibilityTypeGET(id: string, signal?: AbortSignal): Promise<ResponsibilityType>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     responsibilityTypePUT(id: string, body: UpdateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType>;
@@ -682,7 +682,7 @@ export interface IFuseApiClient {
     riskAll(signal?: AbortSignal): Promise<Risk[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     riskPOST(body: CreateRisk | undefined, signal?: AbortSignal): Promise<Risk>;
@@ -693,7 +693,7 @@ export interface IFuseApiClient {
     riskGET(id: string, signal?: AbortSignal): Promise<Risk>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     riskPUT(id: string, body: UpdateRisk | undefined, signal?: AbortSignal): Promise<Risk>;
@@ -714,7 +714,7 @@ export interface IFuseApiClient {
     roleAll(signal?: AbortSignal): Promise<RoleInfo[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     rolePOST(body: CreateRole | undefined, signal?: AbortSignal): Promise<RoleInfo>;
@@ -725,7 +725,7 @@ export interface IFuseApiClient {
     roleGET(id: string, signal?: AbortSignal): Promise<RoleInfo>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     rolePUT(id: string, body: UpdateRole | undefined, signal?: AbortSignal): Promise<RoleInfo>;
@@ -736,7 +736,7 @@ export interface IFuseApiClient {
     roleDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     assignPOST(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
@@ -747,7 +747,7 @@ export interface IFuseApiClient {
     azureIntegrationManagerGET(signal?: AbortSignal): Promise<AzureIntegrationManagerResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     azureIntegrationManagerPUT(body: UpdateAzureIntegrationManager | undefined, signal?: AbortSignal): Promise<AzureIntegrationManagerResponse>;
@@ -758,7 +758,7 @@ export interface IFuseApiClient {
     secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
@@ -769,7 +769,7 @@ export interface IFuseApiClient {
     secretProviderGET(id: string, signal?: AbortSignal): Promise<SecretProviderResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
@@ -780,7 +780,7 @@ export interface IFuseApiClient {
     secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void>;
@@ -791,33 +791,40 @@ export interface IFuseApiClient {
     secretsAll(providerId: string, signal?: AbortSignal): Promise<SecretMetadataResponse[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param keySearch (optional)
-     * @param keyPrefix (optional)
-     * @param label (optional)
+     * @param keySearch (optional) 
+     * @param keyPrefix (optional) 
+     * @param label (optional) 
      * @return OK
      */
     appConfigurationAll(providerId: string, keySearch: string | undefined, keyPrefix: string | undefined, label: string | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     appConfigurationSet(providerId: string, body: SetAppConfigurationValue | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse>;
 
     /**
-     * @param body (optional)
+     * @param key (optional) 
+     * @param label (optional) 
+     * @return OK
+     */
+    appConfigurationRevealReferencedSecret(providerId: string, key: string | undefined, label: string | undefined, signal?: AbortSignal): Promise<ResolvedAppConfigurationReferenceSecretResponse>;
+
+    /**
+     * @param body (optional) 
      * @return OK
      */
     rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param version (optional)
+     * @param version (optional) 
      * @return OK
      */
     reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse>;
@@ -828,13 +835,13 @@ export interface IFuseApiClient {
     state(signal?: AbortSignal): Promise<SecurityStateResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecurityPosture>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     accountsPOST(body: CreateSecurityUser | undefined, signal?: AbortSignal): Promise<SecurityUserInfo>;
@@ -845,13 +852,13 @@ export interface IFuseApiClient {
     accountsAll(signal?: AbortSignal): Promise<SecurityUserInfo[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     login(body: LoginSecurityUser | undefined, signal?: AbortSignal): Promise<LoginSession>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return No Content
      */
     logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void>;
@@ -867,13 +874,13 @@ export interface IFuseApiClient {
     accountsDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     roles(userId: string, body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return No Content
      */
     resetPassword(id: string, body: ResetPasswordRequest | undefined, signal?: AbortSignal): Promise<void>;
@@ -884,7 +891,7 @@ export interface IFuseApiClient {
     sqlIntegrationAll(signal?: AbortSignal): Promise<SqlIntegrationResponse[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     sqlIntegrationPOST(body: CreateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
@@ -895,7 +902,7 @@ export interface IFuseApiClient {
     sqlIntegrationGET(id: string, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
@@ -926,25 +933,25 @@ export interface IFuseApiClient {
     import2(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined, signal?: AbortSignal): Promise<CreateSqlAccountResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult>;
@@ -960,7 +967,7 @@ export interface IFuseApiClient {
     tagAll(signal?: AbortSignal): Promise<Tag[]>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     tagPOST(body: CreateTag | undefined, signal?: AbortSignal): Promise<Tag>;
@@ -971,7 +978,7 @@ export interface IFuseApiClient {
     tagGET(id: string, signal?: AbortSignal): Promise<Tag>;
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     tagPUT(id: string, body: UpdateTag | undefined, signal?: AbortSignal): Promise<Tag>;
@@ -1081,7 +1088,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     accountPOST(body: CreateAccount | undefined, signal?: AbortSignal): Promise<Account> {
@@ -1179,7 +1186,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     accountPUT(id: string, body: UpdateAccount | undefined, signal?: AbortSignal): Promise<Account> {
@@ -1441,7 +1448,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     accountClone(id: string, body: CloneAccount | undefined, signal?: AbortSignal): Promise<Account[]> {
@@ -1508,7 +1515,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     grantPOST(accountId: string, body: CreateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant> {
@@ -1568,7 +1575,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant> {
@@ -1678,14 +1685,14 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param startTime (optional)
-     * @param endTime (optional)
-     * @param entityType (optional)
-     * @param entityId (optional)
-     * @param userId (optional)
-     * @param userName (optional)
-     * @param page (optional)
-     * @param pageSize (optional)
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param entityType (optional) 
+     * @param entityId (optional) 
+     * @param userId (optional) 
+     * @param userName (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
     activity(startTime: Date | undefined, endTime: Date | undefined, entityType: EntityType | undefined, entityId: string | undefined, userId: string | undefined, userName: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult> {
@@ -1756,8 +1763,8 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param page (optional)
-     * @param pageSize (optional)
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
     activityByEntity(entityType: EntityType, entityId: string, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult> {
@@ -1862,7 +1869,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     apiKeyPOST(body: CreateApiKey | undefined, signal?: AbortSignal): Promise<ApiKeyCreatedResult> {
@@ -2077,7 +2084,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     applicationPOST(body: CreateApplication | undefined, signal?: AbortSignal): Promise<Application> {
@@ -2275,7 +2282,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     applicationPUT(id: string, body: UpdateApplication | undefined, signal?: AbortSignal): Promise<Application> {
@@ -2386,7 +2393,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     instancesPOST(appId: string, body: CreateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance> {
@@ -2446,7 +2453,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance> {
@@ -2640,7 +2647,7 @@ export class FuseApiClient implements IFuseApiClient {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
-
+    
             return result200;
             });
         } else if (status === 403) {
@@ -2666,7 +2673,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline> {
@@ -2733,7 +2740,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline> {
@@ -2850,7 +2857,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency> {
@@ -2913,7 +2920,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency> {
@@ -3067,7 +3074,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return No Content
      */
     updateAppSettings(body: AppSettings | undefined, signal?: AbortSignal): Promise<void> {
@@ -3113,15 +3120,15 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param startTime (optional)
-     * @param endTime (optional)
-     * @param action (optional)
-     * @param area (optional)
-     * @param userName (optional)
-     * @param entityId (optional)
-     * @param searchText (optional)
-     * @param page (optional)
-     * @param pageSize (optional)
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param action (optional) 
+     * @param area (optional) 
+     * @param userName (optional) 
+     * @param entityId (optional) 
+     * @param searchText (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
     audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult> {
@@ -3334,7 +3341,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param format (optional)
+     * @param format (optional) 
      * @return OK
      */
     export(format: string | undefined, signal?: AbortSignal): Promise<FileResponse> {
@@ -3388,7 +3395,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param format (optional)
+     * @param format (optional) 
      * @return OK
      */
     template(format: string | undefined, signal?: AbortSignal): Promise<FileResponse> {
@@ -3442,8 +3449,8 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param format (optional)
-     * @param file (optional)
+     * @param format (optional) 
+     * @param file (optional) 
      * @return OK
      */
     importPOST(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void> {
@@ -3541,7 +3548,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     dataStorePOST(body: CreateDataStore | undefined, signal?: AbortSignal): Promise<DataStore> {
@@ -3646,7 +3653,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     dataStorePUT(id: string, body: UpdateDataStore | undefined, signal?: AbortSignal): Promise<DataStore> {
@@ -3802,7 +3809,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     environmentPOST(body: CreateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo> {
@@ -3859,7 +3866,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     environmentPUT(id: string, body: UpdateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo> {
@@ -3956,7 +3963,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number> {
@@ -3988,7 +3995,7 @@ export class FuseApiClient implements IFuseApiClient {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
-
+    
             return result200;
             });
         } else if (status === 400) {
@@ -4052,7 +4059,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     externalResourcePOST(body: CreateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource> {
@@ -4157,7 +4164,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     externalResourcePUT(id: string, body: UpdateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource> {
@@ -4519,7 +4526,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
@@ -4617,7 +4624,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
@@ -4776,7 +4783,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     identityClone(id: string, body: CloneIdentity | undefined, signal?: AbortSignal): Promise<Identity[]> {
@@ -4843,7 +4850,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
@@ -4903,7 +4910,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
@@ -5058,7 +5065,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
@@ -5156,7 +5163,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
@@ -5298,7 +5305,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     setLicense(body: SetLicenseRequest | undefined, signal?: AbortSignal): Promise<LicenseStatusResponse> {
@@ -5379,13 +5386,13 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param minLevel (optional)
-     * @param area (optional)
-     * @param startTime (optional)
-     * @param endTime (optional)
-     * @param searchText (optional)
-     * @param page (optional)
-     * @param pageSize (optional)
+     * @param minLevel (optional) 
+     * @param area (optional) 
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param searchText (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
     querySystemLogs(minLevel: LogLevel | undefined, area: string | undefined, startTime: Date | undefined, endTime: Date | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<SystemLogResult> {
@@ -5452,11 +5459,11 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param minLevel (optional)
-     * @param area (optional)
-     * @param startTime (optional)
-     * @param endTime (optional)
-     * @param searchText (optional)
+     * @param minLevel (optional) 
+     * @param area (optional) 
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param searchText (optional) 
      * @return OK
      */
     getSystemLogCounts(minLevel: LogLevel | undefined, area: string | undefined, startTime: Date | undefined, endTime: Date | undefined, searchText: string | undefined, signal?: AbortSignal): Promise<SystemLogCounts> {
@@ -5639,7 +5646,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
@@ -5744,7 +5751,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
@@ -5857,7 +5864,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    progressGET(signal?: AbortSignal): Promise<UserGuideProgress> {
+    progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
         let url_ = this.baseUrl + "/api/Onboarding/progress";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -5870,11 +5877,11 @@ export class FuseApiClient implements IFuseApiClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processProgressGET(_response);
+            return this.processProgressGETGET(_response);
         });
     }
 
-    protected processProgressGET(response: Response): Promise<UserGuideProgress> {
+    protected processProgressGETGET(response: Response): Promise<UserGuideProgress> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -5900,7 +5907,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     progressPUTPUT(body: UpdateGuideProgress | undefined, signal?: AbortSignal): Promise<UserGuideProgress> {
@@ -5995,7 +6002,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
@@ -6142,7 +6149,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
@@ -6247,7 +6254,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
@@ -6403,7 +6410,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     positionPOST(body: CreatePosition | undefined, signal?: AbortSignal): Promise<Position> {
@@ -6508,7 +6515,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     positionPUT(id: string, body: UpdatePosition | undefined, signal?: AbortSignal): Promise<Position> {
@@ -6674,7 +6681,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     responsibilityAssignmentPOST(applicationId: string, body: CreateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
@@ -6785,7 +6792,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     responsibilityAssignmentPUT(applicationId: string, id: string, body: UpdateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
@@ -6947,7 +6954,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     responsibilityTypePOST(body: CreateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType> {
@@ -7052,7 +7059,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     responsibilityTypePUT(id: string, body: UpdateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType> {
@@ -7215,7 +7222,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     riskPOST(body: CreateRisk | undefined, signal?: AbortSignal): Promise<Risk> {
@@ -7313,7 +7320,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     riskPUT(id: string, body: UpdateRisk | undefined, signal?: AbortSignal): Promise<Risk> {
@@ -7513,7 +7520,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     rolePOST(body: CreateRole | undefined, signal?: AbortSignal): Promise<RoleInfo> {
@@ -7625,7 +7632,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     rolePUT(id: string, body: UpdateRole | undefined, signal?: AbortSignal): Promise<RoleInfo> {
@@ -7764,7 +7771,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     assignPOST(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
@@ -7862,7 +7869,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     azureIntegrationManagerPUT(body: UpdateAzureIntegrationManager | undefined, signal?: AbortSignal): Promise<AzureIntegrationManagerResponse> {
@@ -7957,7 +7964,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
@@ -8055,7 +8062,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
@@ -8166,7 +8173,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void> {
@@ -8274,7 +8281,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void> {
@@ -8330,9 +8337,9 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param keySearch (optional)
-     * @param keyPrefix (optional)
-     * @param label (optional)
+     * @param keySearch (optional) 
+     * @param keyPrefix (optional) 
+     * @param label (optional) 
      * @return OK
      */
     appConfigurationAll(providerId: string, keySearch: string | undefined, keyPrefix: string | undefined, label: string | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse[]> {
@@ -8407,7 +8414,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     appConfigurationSet(providerId: string, body: SetAppConfigurationValue | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse> {
@@ -8467,7 +8474,72 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param key (optional) 
+     * @param label (optional) 
+     * @return OK
+     */
+    appConfigurationRevealReferencedSecret(providerId: string, key: string | undefined, label: string | undefined, signal?: AbortSignal): Promise<ResolvedAppConfigurationReferenceSecretResponse> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/app-configuration/referenced-secret?";
+        if (providerId === undefined || providerId === null)
+            throw new globalThis.Error("The parameter 'providerId' must be defined.");
+        url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+        if (key === null)
+            throw new globalThis.Error("The parameter 'key' cannot be null.");
+        else if (key !== undefined)
+            url_ += "key=" + encodeURIComponent("" + key) + "&";
+        if (label === null)
+            throw new globalThis.Error("The parameter 'label' cannot be null.");
+        else if (label !== undefined)
+            url_ += "label=" + encodeURIComponent("" + label) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAppConfigurationRevealReferencedSecret(_response);
+        });
+    }
+
+    protected processAppConfigurationRevealReferencedSecret(response: Response): Promise<ResolvedAppConfigurationReferenceSecretResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ResolvedAppConfigurationReferenceSecretResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResolvedAppConfigurationReferenceSecretResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
      * @return OK
      */
     rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void> {
@@ -8526,7 +8598,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param version (optional)
+     * @param version (optional) 
      * @return OK
      */
     reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse> {
@@ -8634,7 +8706,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecurityPosture> {
@@ -8666,7 +8738,7 @@ export class FuseApiClient implements IFuseApiClient {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
-
+    
             return result200;
             });
         } else if (status === 400) {
@@ -8699,7 +8771,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     accountsPOST(body: CreateSecurityUser | undefined, signal?: AbortSignal): Promise<SecurityUserInfo> {
@@ -8815,7 +8887,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     login(body: LoginSecurityUser | undefined, signal?: AbortSignal): Promise<LoginSession> {
@@ -8872,7 +8944,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return No Content
      */
     logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void> {
@@ -9014,7 +9086,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     roles(userId: string, body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
@@ -9070,7 +9142,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return No Content
      */
     resetPassword(id: string, body: ResetPasswordRequest | undefined, signal?: AbortSignal): Promise<void> {
@@ -9185,7 +9257,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     sqlIntegrationPOST(body: CreateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
@@ -9297,7 +9369,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
@@ -9620,7 +9692,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse> {
@@ -9687,7 +9759,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined, signal?: AbortSignal): Promise<CreateSqlAccountResponse> {
@@ -9757,7 +9829,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse> {
@@ -9817,7 +9889,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult> {
@@ -9967,7 +10039,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return Created
      */
     tagPOST(body: CreateTag | undefined, signal?: AbortSignal): Promise<Tag> {
@@ -10072,7 +10144,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     tagPUT(id: string, body: UpdateTag | undefined, signal?: AbortSignal): Promise<Tag> {
@@ -16050,6 +16122,50 @@ export interface IResolveDriftResponse {
     operations?: DriftResolutionOperation[] | undefined;
     updatedStatus?: SqlAccountPermissionsStatus;
     errorMessage?: string | undefined;
+}
+
+export class ResolvedAppConfigurationReferenceSecretResponse implements IResolvedAppConfigurationReferenceSecretResponse {
+    secretName?: string | undefined;
+    secretVersion?: string | undefined;
+    value?: string | undefined;
+
+    constructor(data?: IResolvedAppConfigurationReferenceSecretResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.secretName = _data["secretName"];
+            this.secretVersion = _data["secretVersion"];
+            this.value = _data["value"];
+        }
+    }
+
+    static fromJS(data: any): ResolvedAppConfigurationReferenceSecretResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResolvedAppConfigurationReferenceSecretResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["secretName"] = this.secretName;
+        data["secretVersion"] = this.secretVersion;
+        data["value"] = this.value;
+        return data;
+    }
+}
+
+export interface IResolvedAppConfigurationReferenceSecretResponse {
+    secretName?: string | undefined;
+    secretVersion?: string | undefined;
+    value?: string | undefined;
 }
 
 export class ResponsibilityAssignment implements IResponsibilityAssignment {

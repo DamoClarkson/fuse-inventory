@@ -12,6 +12,8 @@ namespace Fuse.Tests.Services;
 
 public class AppConfigurationOperationServiceTests
 {
+    private static readonly Mock<ISecretOperationService> EmptySecretOperationServiceMock = new(MockBehavior.Strict);
+
     private static InMemoryFuseStore NewStore(IEnumerable<SecretProvider>? providers = null)
     {
         var snapshot = new Snapshot(
@@ -60,7 +62,7 @@ public class AppConfigurationOperationServiceTests
 
         var store = NewStore(new[] { provider });
         var mockClient = new Mock<IAzureAppConfigurationClient>(MockBehavior.Strict);
-        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService());
+        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService(), EmptySecretOperationServiceMock.Object);
 
         var result = await service.ListKeyValuesAsync(provider.Id);
 
@@ -92,7 +94,7 @@ public class AppConfigurationOperationServiceTests
         mockClient.Setup(c => c.ListKeyValuesAsync(provider, "Setting", "Shared:", "prod"))
             .ReturnsAsync(Result<IReadOnlyList<AppConfigurationEntry>>.Success(entries));
 
-        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService());
+        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService(), EmptySecretOperationServiceMock.Object);
         var result = await service.ListKeyValuesAsync(provider.Id, "Setting", "Shared:", "prod");
 
         Assert.True(result.IsSuccess);
@@ -115,7 +117,7 @@ public class AppConfigurationOperationServiceTests
 
         var store = NewStore(new[] { provider });
         var mockClient = new Mock<IAzureAppConfigurationClient>(MockBehavior.Strict);
-        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService());
+        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService(), EmptySecretOperationServiceMock.Object);
 
         var command = new SetAppConfigurationValue(provider.Id, "App:Key", null, "value", null);
         var result = await service.SetKeyValueAsync(command, "user", null);
@@ -135,7 +137,7 @@ public class AppConfigurationOperationServiceTests
         mockClient.Setup(c => c.GetKeyValueAsync(provider, "App:Key", null))
             .ReturnsAsync(Result<AppConfigurationEntry?>.Success(lockedEntry));
 
-        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService());
+        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService(), EmptySecretOperationServiceMock.Object);
 
         var command = new SetAppConfigurationValue(provider.Id, "App:Key", null, "new-value", null);
         var result = await service.SetKeyValueAsync(command, "user", null);
@@ -156,7 +158,7 @@ public class AppConfigurationOperationServiceTests
         mockClient.Setup(c => c.GetKeyValueAsync(provider, "App:Key", null))
             .ReturnsAsync(Result<AppConfigurationEntry?>.Success(kvRefEntry));
 
-        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService());
+        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService(), EmptySecretOperationServiceMock.Object);
 
         var command = new SetAppConfigurationValue(provider.Id, "App:Key", null, "new-value", null);
         var result = await service.SetKeyValueAsync(command, "user", null);
@@ -180,7 +182,7 @@ public class AppConfigurationOperationServiceTests
         mockClient.Setup(c => c.SetKeyValueAsync(provider, "App:Key", null, "value", null))
             .ReturnsAsync(Result<AppConfigurationEntry>.Success(newEntry));
 
-        var service = new AppConfigurationOperationService(store, mockClient.Object, audit);
+        var service = new AppConfigurationOperationService(store, mockClient.Object, audit, EmptySecretOperationServiceMock.Object);
         var command = new SetAppConfigurationValue(provider.Id, "App:Key", null, "value", null);
         var result = await service.SetKeyValueAsync(command, "test-user", Guid.Empty);
 
@@ -207,7 +209,7 @@ public class AppConfigurationOperationServiceTests
         mockClient.Setup(c => c.SetKeyValueAsync(provider, "App:Key", "prod", "new-value", "text/plain"))
             .ReturnsAsync(Result<AppConfigurationEntry>.Success(updatedEntry));
 
-        var service = new AppConfigurationOperationService(store, mockClient.Object, audit);
+        var service = new AppConfigurationOperationService(store, mockClient.Object, audit, EmptySecretOperationServiceMock.Object);
         var command = new SetAppConfigurationValue(provider.Id, "App:Key", "prod", "new-value", null);
         var result = await service.SetKeyValueAsync(command, "test-user", Guid.Empty);
 
@@ -229,7 +231,7 @@ public class AppConfigurationOperationServiceTests
         mockClient.Setup(c => c.GetKeyValueAsync(provider, "App:NewKey", null))
             .ReturnsAsync(Result<AppConfigurationEntry?>.Success(null));
 
-        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService());
+        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService(), EmptySecretOperationServiceMock.Object);
         var command = new SetAppConfigurationValue(provider.Id, "App:NewKey", null, "value", null);
         var result = await service.SetKeyValueAsync(command, "user", null);
 
@@ -248,11 +250,93 @@ public class AppConfigurationOperationServiceTests
         mockClient.Setup(c => c.GetKeyValueAsync(provider, "App:Key", null))
             .ReturnsAsync(Result<AppConfigurationEntry?>.Success(existingEntry));
 
-        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService());
+        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService(), EmptySecretOperationServiceMock.Object);
         var command = new SetAppConfigurationValue(provider.Id, "App:Key", null, "new-value", null);
         var result = await service.SetKeyValueAsync(command, "user", null);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("Rotate capability", result.Error);
+    }
+
+    [Fact]
+    public async Task RevealReferencedSecretAsync_WithKeyVaultReference_RevealsSecret()
+    {
+        var appConfigProvider = NewAppConfigProvider();
+        var keyVaultProvider = new SecretProvider(
+            Guid.NewGuid(),
+            "kv",
+            new Uri("https://example.vault.azure.net/"),
+            SecretProviderAuthMode.ManagedIdentity,
+            null,
+            SecretProviderCapabilities.Read,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var store = NewStore(new[] { appConfigProvider, keyVaultProvider });
+        var mockClient = new Mock<IAzureAppConfigurationClient>();
+        mockClient.Setup(c => c.GetKeyValueAsync(appConfigProvider, "Shared:ApiKey", "prod"))
+            .ReturnsAsync(Result<AppConfigurationEntry?>.Success(
+                new AppConfigurationEntry(
+                    "Shared:ApiKey",
+                    null,
+                    "prod",
+                    "application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8",
+                    null,
+                    false,
+                    true,
+                    "https://example.vault.azure.net/secrets/api-key/v1"
+                )));
+
+        var mockSecretOps = new Mock<ISecretOperationService>();
+        mockSecretOps.Setup(s => s.RevealSecretAsync(
+                It.Is<RevealSecret>(r =>
+                    r.ProviderId == keyVaultProvider.Id
+                    && r.SecretName == "api-key"
+                    && r.Version == "v1"),
+                "test-user",
+                Guid.Empty))
+            .ReturnsAsync(Result<string>.Success("super-secret"));
+
+        var service = new AppConfigurationOperationService(store, mockClient.Object, new FakeAuditService(), mockSecretOps.Object);
+
+        var result = await service.RevealReferencedSecretAsync(appConfigProvider.Id, "Shared:ApiKey", "prod", "test-user", Guid.Empty);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("api-key", result.Value!.SecretName);
+        Assert.Equal("v1", result.Value.SecretVersion);
+        Assert.Equal("super-secret", result.Value.Value);
+    }
+
+    [Fact]
+    public async Task RevealReferencedSecretAsync_WhenNoMatchingKeyVaultProvider_ReturnsNotFound()
+    {
+        var appConfigProvider = NewAppConfigProvider();
+        var store = NewStore(new[] { appConfigProvider });
+        var mockClient = new Mock<IAzureAppConfigurationClient>();
+        mockClient.Setup(c => c.GetKeyValueAsync(appConfigProvider, "Shared:ApiKey", null))
+            .ReturnsAsync(Result<AppConfigurationEntry?>.Success(
+                new AppConfigurationEntry(
+                    "Shared:ApiKey",
+                    null,
+                    null,
+                    "application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8",
+                    null,
+                    false,
+                    true,
+                    "https://missing.vault.azure.net/secrets/api-key"
+                )));
+
+        var service = new AppConfigurationOperationService(
+            store,
+            mockClient.Object,
+            new FakeAuditService(),
+            EmptySecretOperationServiceMock.Object);
+
+        var result = await service.RevealReferencedSecretAsync(appConfigProvider.Id, "Shared:ApiKey", null, "test-user", Guid.Empty);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+        Assert.Contains("No configured Key Vault integration", result.Error);
     }
 }

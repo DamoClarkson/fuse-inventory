@@ -2,6 +2,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 using Fuse.Core.Areas.Audit;
 using System.Text.Json;
 
@@ -12,15 +13,18 @@ public class AppConfigurationOperationService : IAppConfigurationOperationServic
     private readonly IFuseStore _fuseStore;
     private readonly IAzureAppConfigurationClient _azureAppConfigurationClient;
     private readonly IAuditService _auditService;
+    private readonly ISecretOperationService _secretOperationService;
 
     public AppConfigurationOperationService(
         IFuseStore fuseStore,
         IAzureAppConfigurationClient azureAppConfigurationClient,
-        IAuditService auditService)
+        IAuditService auditService,
+        ISecretOperationService secretOperationService)
     {
         _fuseStore = fuseStore;
         _azureAppConfigurationClient = azureAppConfigurationClient;
         _auditService = auditService;
+        _secretOperationService = secretOperationService;
     }
 
     public async Task<Result<IReadOnlyList<AppConfigurationEntry>>> ListKeyValuesAsync(
@@ -125,5 +129,86 @@ public class AppConfigurationOperationService : IAppConfigurationOperationServic
         ));
 
         return setResult;
+    }
+
+    public async Task<Result<ResolvedAppConfigurationReferenceSecretResponse>> RevealReferencedSecretAsync(
+        Guid providerId,
+        string key,
+        string? label,
+        string userName,
+        Guid? userId)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure("Key is required.", ErrorType.Validation);
+
+        var store = await _fuseStore.GetAsync();
+        var appConfigProvider = store.SecretProviders.FirstOrDefault(p => p.Id == providerId);
+
+        if (appConfigProvider is null)
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure($"Secret provider with ID '{providerId}' not found.", ErrorType.NotFound);
+
+        if (!SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(appConfigProvider.VaultUri))
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure("This integration is not an Azure App Configuration endpoint.", ErrorType.Validation);
+
+        if (!appConfigProvider.Capabilities.HasFlag(SecretProviderCapabilities.Check))
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure("This integration does not have Check capability enabled.", ErrorType.Validation);
+
+        var entryResult = await _azureAppConfigurationClient.GetKeyValueAsync(appConfigProvider, key, label);
+        if (!entryResult.IsSuccess)
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure(entryResult.Error!, entryResult);
+
+        var entry = entryResult.Value;
+        if (entry is null)
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure($"App Configuration key '{key}' was not found.", ErrorType.NotFound);
+
+        if (!entry.IsKeyVaultReference || string.IsNullOrWhiteSpace(entry.KeyVaultReferenceUri))
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure(
+                $"The key '{key}' is not a Key Vault reference.",
+                ErrorType.Validation);
+
+        var parsedReference = TryParseReferenceUri(entry.KeyVaultReferenceUri);
+        if (parsedReference is null)
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure(
+                $"The key '{key}' has an invalid Key Vault reference URI.",
+                ErrorType.Validation);
+
+        var keyVaultProvider = store.SecretProviders.FirstOrDefault(p =>
+            !SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(p.VaultUri)
+            && string.Equals(p.VaultUri.Host, parsedReference.Value.VaultHost, StringComparison.OrdinalIgnoreCase));
+
+        if (keyVaultProvider is null)
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure(
+                $"No configured Key Vault integration was found for host '{parsedReference.Value.VaultHost}'.",
+                ErrorType.NotFound);
+
+        var revealResult = await _secretOperationService.RevealSecretAsync(
+            new RevealSecret(keyVaultProvider.Id, parsedReference.Value.SecretName, parsedReference.Value.SecretVersion),
+            userName,
+            userId);
+
+        if (!revealResult.IsSuccess)
+            return Result<ResolvedAppConfigurationReferenceSecretResponse>.Failure(revealResult.Error!, revealResult);
+
+        return Result<ResolvedAppConfigurationReferenceSecretResponse>.Success(new ResolvedAppConfigurationReferenceSecretResponse(
+            SecretName: parsedReference.Value.SecretName,
+            SecretVersion: parsedReference.Value.SecretVersion,
+            Value: revealResult.Value!));
+    }
+
+    private static (string VaultHost, string SecretName, string? SecretVersion)? TryParseReferenceUri(string uriValue)
+    {
+        if (!Uri.TryCreate(uriValue, UriKind.Absolute, out var uri))
+            return null;
+
+        var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 2 || !string.Equals(segments[0], "secrets", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var secretName = Uri.UnescapeDataString(segments[1]);
+        if (string.IsNullOrWhiteSpace(secretName))
+            return null;
+
+        var secretVersion = segments.Length >= 3 ? Uri.UnescapeDataString(segments[2]) : null;
+        return (uri.Host, secretName, string.IsNullOrWhiteSpace(secretVersion) ? null : secretVersion);
     }
 }

@@ -86,6 +86,18 @@
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
             <q-btn
+              v-if="props.row.isKeyVaultReference && canRevealReferencedSecret"
+              flat
+              dense
+              round
+              icon="visibility"
+              color="secondary"
+              class="q-mr-xs"
+              @click="openRevealReferenceDialog(props.row)"
+            >
+              <q-tooltip>Reveal referenced secret value</q-tooltip>
+            </q-btn>
+            <q-btn
               flat
               dense
               round
@@ -116,6 +128,53 @@
         @cancel="closeFormDialog"
       />
     </q-dialog>
+
+    <q-dialog v-model="isRevealDialogOpen" persistent>
+      <q-card class="form-dialog">
+        <q-card-section class="dialog-header">
+          <div class="text-h6">Referenced Secret Value</div>
+          <q-btn flat round dense icon="close" @click="closeRevealDialog" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <div class="text-caption text-grey-7 q-mb-xs">
+            {{ revealDialogContext || 'Secret reference' }}
+          </div>
+
+          <div v-if="isRevealLoading" class="text-center q-pa-md">
+            <q-spinner color="primary" size="2em" />
+            <div class="text-grey-7 q-mt-sm">Retrieving referenced secret value…</div>
+          </div>
+
+          <div v-else-if="revealError" class="text-negative">
+            <q-icon name="error" class="q-mr-xs" />{{ revealError }}
+          </div>
+
+          <div v-else-if="revealedValue !== null">
+            <q-input
+              :model-value="revealedValue"
+              readonly
+              outlined
+              dense
+              :type="showRevealedValue ? 'text' : 'password'"
+            >
+              <template #append>
+                <q-btn
+                  flat
+                  round
+                  dense
+                  :icon="showRevealedValue ? 'visibility_off' : 'visibility'"
+                  @click="showRevealedValue = !showRevealedValue"
+                />
+              </template>
+            </q-input>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Close" @click="closeRevealDialog" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -124,6 +183,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
+import { useFuseClient } from '../composables/useFuseClient'
 import { useSecretProviders } from '../composables/useSecretProviders'
 import { useAppConfigurationEntries } from '../composables/useAppConfigurationEntries'
 import type { AppConfigurationEntry } from '../composables/useAppConfigurationEntries'
@@ -137,7 +197,11 @@ import AppConfigurationEntryForm from '../components/secretProvider/AppConfigura
 const route = useRoute()
 const router = useRouter()
 const providerId = computed(() => route.params.id as string)
+const client = useFuseClient()
 const fuseStore = useFuseStore()
+const canRevealReferencedSecret = computed(() =>
+  fuseStore.hasPermission(Permission.AzureKeyVaultSecretsReveal)
+)
 
 const { data: providers } = useSecretProviders()
 const provider = computed(() => providers.value?.find(p => p.id === providerId.value) ?? null)
@@ -159,6 +223,13 @@ const isFormDialogOpen = ref(false)
 const selectedEntry = ref<AppConfigurationEntry | null>(null)
 const upsertMutation = useUpsertAppConfigurationEntry()
 
+const isRevealDialogOpen = ref(false)
+const isRevealLoading = ref(false)
+const revealError = ref<string | null>(null)
+const revealedValue = ref<string | null>(null)
+const showRevealedValue = ref(false)
+const revealDialogContext = ref<string>('')
+
 function openCreateDialog() {
   selectedEntry.value = null
   isFormDialogOpen.value = true
@@ -172,6 +243,39 @@ function openEditDialog(entry: AppConfigurationEntry) {
 function closeFormDialog() {
   selectedEntry.value = null
   isFormDialogOpen.value = false
+}
+
+function closeRevealDialog() {
+  isRevealDialogOpen.value = false
+  isRevealLoading.value = false
+  revealError.value = null
+  revealedValue.value = null
+  showRevealedValue.value = false
+  revealDialogContext.value = ''
+}
+
+async function openRevealReferenceDialog(entry: AppConfigurationEntry) {
+  if (!entry.key) return
+
+  isRevealDialogOpen.value = true
+  isRevealLoading.value = true
+  revealError.value = null
+  revealedValue.value = null
+  showRevealedValue.value = false
+  revealDialogContext.value = `${entry.key}${entry.label ? ` [${entry.label}]` : ''}`
+
+  try {
+    const response = await client.appConfigurationRevealReferencedSecret(
+      providerId.value,
+      entry.key,
+      entry.label ?? undefined
+    )
+    revealedValue.value = response.value ?? ''
+  } catch (err) {
+    revealError.value = getErrorMessage(err, 'Unable to reveal referenced secret value')
+  } finally {
+    isRevealLoading.value = false
+  }
 }
 
 function escapeHtml(str: string): string {
