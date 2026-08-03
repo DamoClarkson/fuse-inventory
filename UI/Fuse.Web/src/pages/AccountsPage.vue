@@ -50,6 +50,7 @@ import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { useApplications } from '../composables/useApplications'
+import { useEnvironments } from '../composables/useEnvironments'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
 import { useMessageBrokers } from '../composables/useMessageBrokers'
@@ -61,6 +62,7 @@ const router = useRouter()
 const fuseStore = useFuseStore()
 const tagsStore = useTags()
 const applicationsQuery = useApplications()
+const environmentsQuery = useEnvironments()
 const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
 const messageBrokersQuery = useMessageBrokers()
@@ -105,11 +107,13 @@ function resolveTargetName(account: Account) {
     case TargetKind.Application: {
       // Treat targetId as instance id; fallback to legacy application id
       const apps = applicationsQuery.data.value ?? []
+      const envLookup = environmentsQuery.lookup.value
       for (const app of apps) {
         const inst = (app.instances ?? []).find((i) => i.id === targetId)
         if (inst) {
           const appName = app.name ?? app.id ?? 'Application'
-          return `${appName} — ${inst.environmentId ?? '—'}`
+          const envName = inst.environmentId ? (envLookup[inst.environmentId] ?? inst.environmentId) : '—'
+          return `${appName} — ${envName}`
         }
       }
       return apps.find((a) => a.id === targetId)?.name ?? targetId

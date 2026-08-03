@@ -84,8 +84,9 @@
         </q-list>
         <q-card-section v-else class="empty-panel">
           <q-spinner v-if="activityLoading" color="primary" size="28px" />
+          <q-icon v-else-if="hasUnexpectedActivityError" name="warning" color="warning" size="36px" />
           <q-icon v-else name="history" color="grey-5" size="36px" />
-          <span>{{ canReadActivity ? 'No recent inventory changes.' : 'Activity access is not available.' }}</span>
+          <span>{{ activityPanelMessage }}</span>
         </q-card-section>
       </q-card>
     </section>
@@ -128,7 +129,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { Notify } from 'quasar'
-import { HealthCheckProvider, InstanceHealthState, RiskImpact, RiskStatus, TargetKind, type ActivityFeedItem } from 'api/client'
+import { HealthCheckProvider, InstanceHealthState, RiskImpact, RiskStatus, SecurityPosture, TargetKind, type ActivityFeedItem } from 'api/client'
 import { Permission } from 'permissions'
 import { useApplications } from '../composables/useApplications'
 import { usePlatforms } from '../composables/usePlatforms'
@@ -144,7 +145,7 @@ import InventoryDataStoreCard from '../components/home/InventoryDataStoreCard.vu
 import InventoryExternalResourceCard from '../components/home/InventoryExternalResourceCard.vue'
 import { useOnboardingStore } from '../stores/OnboardingStore'
 import { useOnboardingTour } from '../composables/useOnboardingTour'
-import { getErrorMessage } from '../utils/error'
+import { getErrorMessage, isAuthOrPermissionError } from '../utils/error'
 import { useFuseStore } from '../stores/FuseStore'
 
 type InventoryType = 'instance' | 'datastore' | 'external'
@@ -175,9 +176,12 @@ const tagsQuery = useTags()
 const healthQuery = useHealthMonitoring()
 const completenessQuery = useQuery({ queryKey: ['applicationCompleteness'], queryFn: () => client.applicationHealth(), enabled: computed(() => fuseStore.hasPermission(Permission.ApplicationsRead)) })
 const risksQuery = useQuery({ queryKey: ['risks'], queryFn: () => client.riskAll(), enabled: computed(() => fuseStore.hasPermission(Permission.RisksRead)) })
-const { items: recentActivity, loading: activityLoading, error: activityError, queryActivity } = useActivityFeed()
+const { items: recentActivity, loading: activityLoading, error: activityError, errorStatus: activityErrorStatus, queryActivity } = useActivityFeed()
 
-const canReadActivity = computed(() => fuseStore.hasPermission(Permission.ActivityRead))
+const canReadActivity = computed(() => {
+  if (fuseStore.securityPosture === SecurityPosture.Unrestricted) return true
+  return fuseStore.isLoggedIn && fuseStore.hasPermission(Permission.ActivityRead)
+})
 const showOnboardingBanner = computed(() => fuseStore.hasPermission(Permission.ApplicationsCreate) && !onboardingStore.hasCompletedTour && !onboardingStore.dismissedBanner)
 const applicationCount = computed(() => applicationsQuery.data.value?.length ?? 0)
 const instanceCount = computed(() => (applicationsQuery.data.value ?? []).reduce((total, app) => total + (app.instances?.length ?? 0), 0))
@@ -273,9 +277,18 @@ watch([searchText, selectedEnvironments, selectedItemTypes], () => { inventoryPa
 const inventoryQueries = [applicationsQuery, platformsQuery, environmentsQuery, externalResourcesQuery, dataStoresQuery]
 const isInventoryLoading = computed(() => inventoryQueries.some(query => query.isLoading.value))
 const isFetching = computed(() => inventoryQueries.some(query => query.isFetching.value) || healthQuery.isFetching.value || completenessQuery.isFetching.value || risksQuery.isFetching.value || activityLoading.value)
+const hasUnexpectedActivityError = computed(() => !!activityError.value && activityErrorStatus.value !== 401 && activityErrorStatus.value !== 403)
+const activityPanelMessage = computed(() => {
+  if (!canReadActivity.value) return 'Activity access is not available.'
+  if (activityLoading.value) return 'Loading recent changes…'
+  if (hasUnexpectedActivityError.value) return 'Unable to load recent changes right now.'
+  return 'No recent inventory changes.'
+})
 const errorMessage = computed(() => {
-  const error = [...inventoryQueries, healthQuery, completenessQuery, risksQuery].map(query => query.error.value).find(Boolean)
-  return error ? getErrorMessage(error, 'Unable to load dashboard data.') : activityError.value
+  const error = [...inventoryQueries, healthQuery, completenessQuery, risksQuery]
+    .map(query => query.error.value)
+    .find(candidate => !!candidate && !isAuthOrPermissionError(candidate))
+  return error ? getErrorMessage(error, 'Unable to load dashboard data.') : null
 })
 
 function formatDependencyLabel(dependency: { targetKind?: TargetKind | null; targetId?: string | null }) {

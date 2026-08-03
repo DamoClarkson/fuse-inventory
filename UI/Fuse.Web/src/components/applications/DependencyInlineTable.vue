@@ -372,8 +372,12 @@ function createEmptyForm(draftId?: string): DependencyRowForm {
 }
 
 function addDraftRow() {
-  const draftId = crypto.randomUUID()
+  const draftId = createDraftId()
   draftRows.value.push(createEmptyForm(draftId))
+}
+
+function createDraftId(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `draft-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 function startEdit(dep: ApplicationInstanceDependency) {

@@ -117,7 +117,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Dialog, Notify, type QTableColumn, type QTableProps } from 'quasar'
-import { EntityType } from 'api/client'
+import { EntityType, SecurityPosture } from 'api/client'
 import { Permission } from 'permissions'
 import { useActivityFeed } from '../composables/useActivityFeed'
 import { useFuseClient } from '../composables/useFuseClient'
@@ -126,7 +126,10 @@ import { getErrorMessage } from '../utils/error'
 
 const fuseStore = useFuseStore()
 const client = useFuseClient()
-const canReadActivity = computed(() => fuseStore.hasPermission(Permission.ActivityRead))
+const canReadActivity = computed(() => {
+  if (fuseStore.securityPosture === SecurityPosture.Unrestricted) return true
+  return fuseStore.isLoggedIn && fuseStore.hasPermission(Permission.ActivityRead)
+})
 
 const filters = ref({
   startTime: '',
@@ -184,6 +187,14 @@ watch([totalCount, currentPage, pageSize], () => {
 })
 
 watch(pollIntervalSeconds, () => {
+  restartPolling()
+})
+
+watch(canReadActivity, (canRead) => {
+  if (!canRead) {
+    stopPolling()
+    return
+  }
   restartPolling()
 })
 

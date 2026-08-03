@@ -45,3 +45,10 @@ public record AppConfigurationEntryResponse
     bool IsKeyVaultReference,
     string? KeyVaultReferenceUri
 );
+
+public record ResolvedAppConfigurationReferenceSecretResponse
+(
+    string SecretName,
+    string? SecretVersion,
+    string Value
+);

@@ -91,3 +91,23 @@ export function getErrorMessage(error: unknown, fallback = 'Request failed'): st
 
   return fallback
 }
+
+export function getErrorStatus(error: unknown): number | undefined {
+  if (error instanceof ApiException) {
+    return error.status
+  }
+
+  if (error && typeof error === 'object') {
+    const status = (error as { status?: unknown }).status
+    if (typeof status === 'number') {
+      return status
+    }
+  }
+
+  return undefined
+}
+
+export function isAuthOrPermissionError(error: unknown): boolean {
+  const status = getErrorStatus(error)
+  return status === 401 || status === 403
+}
