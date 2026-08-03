@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { EntityType, type ActivityFeedItem } from 'api/client'
 import { useFuseClient } from './useFuseClient'
+import { getErrorMessage, getErrorStatus } from '../utils/error'
 
 export interface ActivityFeedQuery {
   startTime?: string
@@ -20,10 +21,12 @@ export function useActivityFeed() {
   const pageSize = ref(20)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const errorStatus = ref<number | null>(null)
 
   async function queryActivity(query: ActivityFeedQuery = {}) {
     loading.value = true
     error.value = null
+    errorStatus.value = null
 
     try {
       const response = await client.activity(
@@ -41,8 +44,9 @@ export function useActivityFeed() {
       totalCount.value = response.totalCount ?? 0
       currentPage.value = response.page ?? 1
       pageSize.value = response.pageSize ?? (query.pageSize ?? 20)
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load activity feed'
+    } catch (err: unknown) {
+      errorStatus.value = getErrorStatus(err) ?? null
+      error.value = getErrorMessage(err, 'Failed to load activity feed')
       console.error('Error loading activity feed:', err)
     } finally {
       loading.value = false
@@ -52,6 +56,7 @@ export function useActivityFeed() {
   async function queryByEntity(entityType: EntityType, entityId: string, page = 1, requestedPageSize = 20) {
     loading.value = true
     error.value = null
+    errorStatus.value = null
 
     try {
       const response = await client.activityByEntity(entityType, entityId, page, requestedPageSize)
@@ -59,8 +64,9 @@ export function useActivityFeed() {
       totalCount.value = response.totalCount ?? 0
       currentPage.value = response.page ?? page
       pageSize.value = response.pageSize ?? requestedPageSize
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load entity history'
+    } catch (err: unknown) {
+      errorStatus.value = getErrorStatus(err) ?? null
+      error.value = getErrorMessage(err, 'Failed to load entity history')
       console.error('Error loading entity history:', err)
     } finally {
       loading.value = false
@@ -74,6 +80,7 @@ export function useActivityFeed() {
     pageSize,
     loading,
     error,
+    errorStatus,
     queryActivity,
     queryByEntity
   }
