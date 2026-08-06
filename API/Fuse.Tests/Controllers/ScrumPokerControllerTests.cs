@@ -50,6 +50,11 @@ public sealed class ScrumPokerControllerTests
 
         Assert.Equal(ScrumPokerCard.Five, afterReveal.Participants.Single(p => p.DisplayName == "Alice").Card);
         Assert.Equal(ScrumPokerCard.Eight, afterReveal.Participants.Single(p => p.DisplayName == "Bob").Card);
+
+        var hidden = GetRoom(await controller.Hide(session.RoomCode, new ScrumPokerParticipantRequest(session.ParticipantToken)));
+        Assert.Equal(ScrumPokerPhase.Voting, hidden.Phase);
+        Assert.Null(hidden.Participants.Single(p => p.DisplayName == "Bob").Card);
+        Assert.True(hidden.Participants.Single(p => p.DisplayName == "Bob").HasVoted);
     }
 
     private static ScrumPokerController CreateController(InMemoryFuseStore inventoryStore) =>

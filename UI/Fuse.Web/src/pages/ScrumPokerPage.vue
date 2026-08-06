@@ -60,13 +60,13 @@
                   :class="{ 'poker-card--selected': selectedCard === card.value }"
                   :label="card.label"
                   :disable="room?.phase === ScrumPokerPhase.Revealed || actionLoading"
-                  @click="selectCard(card.value)"
+                  @click="selectCard(selectedCard === card.value ? null : card.value)"
                 />
               </div>
             </q-card-section>
             <q-card-actions align="right">
               <q-btn flat label="Reset round" icon="restart_alt" :loading="actionLoading" @click="resetRound" />
-              <q-btn color="primary" label="Reveal cards" icon="visibility" :disable="room?.phase === ScrumPokerPhase.Revealed" :loading="actionLoading" @click="revealCards" />
+              <q-btn color="primary" :label="room?.phase === ScrumPokerPhase.Revealed ? 'Hide cards' : 'Reveal cards'" :icon="room?.phase === ScrumPokerPhase.Revealed ? 'visibility_off' : 'visibility'" :loading="actionLoading" @click="room?.phase === ScrumPokerPhase.Revealed ? hideCards() : revealCards()" />
             </q-card-actions>
           </q-card>
         </div>
@@ -178,7 +178,7 @@ async function refreshRoom() {
 function startPolling() { stopPolling(); void refreshRoom(); pollTimer = setInterval(() => void refreshRoom(), 1000) }
 function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = undefined } }
 
-async function selectCard(card: ScrumPokerCard) {
+async function selectCard(card: ScrumPokerCard | null) {
   if (!session.value) return
   actionLoading.value = true; errorMessage.value = ''
   try { room.value = await client.scrumPokerCardPUT(session.value.roomCode!, { participantToken: session.value.participantToken, card } as any); selectedCard.value = card }
@@ -186,6 +186,7 @@ async function selectCard(card: ScrumPokerCard) {
   finally { actionLoading.value = false }
 }
 async function revealCards() { await roomAction(() => client.scrumPokerReveal(session.value!.roomCode!, { participantToken: session.value!.participantToken } as any)) }
+async function hideCards() { await roomAction(() => client.scrumPokerHide(session.value!.roomCode!, { participantToken: session.value!.participantToken } as any)) }
 async function resetRound() { await roomAction(() => client.scrumPokerReset(session.value!.roomCode!, { participantToken: session.value!.participantToken } as any)) ; selectedCard.value = null }
 async function roomAction(action: () => Promise<ScrumPokerRoomResponse>) { actionLoading.value = true; errorMessage.value = ''; try { room.value = await action() } catch (error) { errorMessage.value = error instanceof Error ? error.message : 'Unable to update the room.' } finally { actionLoading.value = false } }
 async function copyRoomCode() { if (session.value?.roomCode) { await navigator.clipboard?.writeText(session.value.roomCode); Notify.create({ message: 'Room code copied', color: 'positive' }) } }

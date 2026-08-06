@@ -95,6 +95,19 @@ public sealed class ScrumPokerController(
         return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.ParticipantToken)) : ToError<ScrumPokerRoomResponse>(result);
     }
 
+    [HttpPost("rooms/{roomCode}/hide")]
+    [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ScrumPokerRoomResponse>> Hide(string roomCode, [FromBody] ScrumPokerParticipantRequest request)
+    {
+        if (!await IsEnabled())
+            return NotFound();
+
+        var result = store.Hide(roomCode, request.ParticipantToken, DateTime.UtcNow);
+        return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.ParticipantToken)) : ToError<ScrumPokerRoomResponse>(result);
+    }
+
     private Task<bool> IsEnabled() => fuseStore.GetAsync(snapshot => snapshot.AppSettings.ScrumPokerEnabled);
 
     private static ScrumPokerSessionResponse ToSessionResponse(ScrumPokerSession session) =>
@@ -140,7 +153,7 @@ public sealed record ScrumPokerJoinRequest(string DisplayName);
 
 public sealed record ScrumPokerParticipantRequest(string ParticipantToken);
 
-public sealed record ScrumPokerCardRequest(string ParticipantToken, ScrumPokerCard Card);
+public sealed record ScrumPokerCardRequest(string ParticipantToken, ScrumPokerCard? Card);
 
 public sealed record ScrumPokerSessionResponse(
     string RoomCode,

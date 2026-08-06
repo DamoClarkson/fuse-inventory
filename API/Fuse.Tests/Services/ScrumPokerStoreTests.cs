@@ -52,6 +52,19 @@ public sealed class ScrumPokerStoreTests
     }
 
     [Fact]
+    public void SelectCard_CanClearAnExistingVote()
+    {
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Alice", Start).Value!;
+        store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, ScrumPokerCard.Eight, Start.AddSeconds(1));
+
+        var result = store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, null, Start.AddSeconds(2));
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value!.Participants.Single().SelectedCard);
+    }
+
+    [Fact]
     public void GetRoom_RetainsCardsForThePublicProjectionToRedact()
     {
         var store = new InMemoryScrumPokerStore();
@@ -78,6 +91,21 @@ public sealed class ScrumPokerStoreTests
 
         Assert.Equal(ScrumPokerPhase.Revealed, first.Value!.Phase);
         Assert.Equal(first.Value.Revision, second.Value!.Revision);
+    }
+
+    [Fact]
+    public void Hide_ReturnsTheRoomToVotingWithoutClearingSelections()
+    {
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Alice", Start).Value!;
+        store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, ScrumPokerCard.Five, Start.AddSeconds(1));
+        store.Reveal(owner.Room.RoomCode, owner.Participant.Token, Start.AddSeconds(2));
+
+        var result = store.Hide(owner.Room.RoomCode, owner.Participant.Token, Start.AddSeconds(3));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ScrumPokerPhase.Voting, result.Value!.Phase);
+        Assert.Equal(ScrumPokerCard.Five, result.Value.Participants.Single().SelectedCard);
     }
 
     [Fact]

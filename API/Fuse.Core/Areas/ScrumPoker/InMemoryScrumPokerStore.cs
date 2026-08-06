@@ -86,9 +86,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         }
     }
 
-    public Result<ScrumPokerRoom> SelectCard(string roomCode, string participantToken, ScrumPokerCard card, DateTime utcNow)
+    public Result<ScrumPokerRoom> SelectCard(string roomCode, string participantToken, ScrumPokerCard? card, DateTime utcNow)
     {
-        if (!Enum.IsDefined(card))
+        if (card is not null && !Enum.IsDefined(card.Value))
             return Result<ScrumPokerRoom>.Failure("The selected card is not valid.");
 
         var stateResult = GetParticipantRoom(roomCode, participantToken, utcNow);
@@ -122,6 +122,27 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             if (state.Phase == ScrumPokerPhase.Voting)
             {
                 state.Phase = ScrumPokerPhase.Revealed;
+                state.Revision++;
+            }
+
+            return Result<ScrumPokerRoom>.Success(CreateRoomSnapshot(state));
+        }
+    }
+
+    public Result<ScrumPokerRoom> Hide(string roomCode, string participantToken, DateTime utcNow)
+    {
+        var stateResult = GetParticipantRoom(roomCode, participantToken, utcNow);
+        if (!stateResult.IsSuccess)
+            return Result<ScrumPokerRoom>.Failure(stateResult.Error!, stateResult);
+
+        var (state, participant) = stateResult.Value!;
+        lock (state.Gate)
+        {
+            state.Participants[participant.Id] = participant with { LastSeenUtc = utcNow };
+            state.LastActivityUtc = utcNow;
+            if (state.Phase == ScrumPokerPhase.Revealed)
+            {
+                state.Phase = ScrumPokerPhase.Voting;
                 state.Revision++;
             }
 

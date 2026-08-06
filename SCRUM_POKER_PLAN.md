@@ -14,6 +14,7 @@ The feature is deliberately separate from inventory data. Rooms are temporary co
 
 - [x] Use the standard Scrum Poker card set: `0`, `½`, `1`, `2`, `3`, `5`, `8`, `13`, `20`, `40`, `100`, `?`, `Coffee`.
 - [x] Any participant may reveal the cards.
+- [x] Revealed cards can be hidden again without clearing the current selections.
 - [x] Any participant may reset the round.
 - [x] Rooms do not need to survive an application restart.
 - [x] The feature is controlled by a Fuse App Settings toggle.
@@ -119,6 +120,7 @@ While voting, the public state should expose whether each participant has voted,
 - [x] Test valid and invalid card selections.
 - [x] Test card state before reveal (public redaction remains part of the API slice).
 - [x] Test shared reveal state.
+- [x] Test hiding revealed cards while retaining selections.
 - [x] Test reset behaviour.
 - [ ] Test concurrent votes and reveal/reset operations.
 - [x] Test expiry and feature-disabled behaviour.
@@ -179,3 +181,4 @@ The feature is ready when:
 | 2026-08-06 | Added the in-memory room store, standard card/room models, token generation, atomic room operations, expiry, DI registration, and focused unit tests. Non-integration suite passes: 567 tests, 0 failures. |
 | 2026-08-06 | Added the anonymous Scrum Poker API, App Settings enforcement, participant-token validation, and safe public-state projection. Added controller tests for disabled access and card redaction. Non-integration suite passes: 569 tests, 0 failures. |
 | 2026-08-06 | Added the checked-in frontend API client methods, create/join and room routes, polling room UI, standard card controls, reveal/reset actions, room-code copying, and feature-gated navigation. Vue type-check and production build pass. |
+| 2026-08-06 | Added card deselection, reversible reveal/hide behaviour, and moved the Scrum Poker navigation item into Integrations. Backend suite passes 571 tests; frontend production build passes. |

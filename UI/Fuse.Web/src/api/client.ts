@@ -234,6 +234,7 @@ export interface IFuseApiClient {
     scrumPokerState(roomCode: string, participantToken: string, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
     scrumPokerCardPUT(roomCode: string, body: ScrumPokerCardRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
     scrumPokerReveal(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
+    scrumPokerHide(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
     scrumPokerReset(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
 
     /**
@@ -3159,6 +3160,10 @@ export class FuseApiClient implements IFuseApiClient {
 
     scrumPokerReveal(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
         return this.scrumPokerCommand(roomCode, "/reveal", "POST", body, signal);
+    }
+
+    scrumPokerHide(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
+        return this.scrumPokerCommand(roomCode, "/hide", "POST", body, signal);
     }
 
     scrumPokerReset(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
@@ -19796,10 +19801,10 @@ export class ScrumPokerParticipantRequest implements IScrumPokerParticipantReque
     toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["participantToken"] = this.participantToken; return data; }
 }
 
-export interface IScrumPokerCardRequest extends IScrumPokerParticipantRequest { card?: ScrumPokerCard; }
+export interface IScrumPokerCardRequest extends IScrumPokerParticipantRequest { card?: ScrumPokerCard | null; }
 export class ScrumPokerCardRequest implements IScrumPokerCardRequest {
     participantToken?: string;
-    card?: ScrumPokerCard;
+    card?: ScrumPokerCard | null;
     constructor(data?: IScrumPokerCardRequest) { if (data) { this.participantToken = data.participantToken; this.card = data.card; } }
     static fromJS(data: any): ScrumPokerCardRequest { return new ScrumPokerCardRequest(data); }
     toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["participantToken"] = this.participantToken; data["card"] = this.card; return data; }

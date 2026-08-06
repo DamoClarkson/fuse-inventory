@@ -83,11 +83,6 @@
 
           <q-separator class="q-my-md" />
 
-          <q-item v-if="fuseStore.appSettings?.scrumPokerEnabled" clickable v-ripple :to="{ name: 'scrumPoker' }" active-class="bg-primary text-white">
-            <q-item-section avatar><q-icon name="style" /></q-item-section>
-            <q-item-section>Scrum Poker</q-item-section>
-          </q-item>
-
           <q-expansion-item label="Inventory" icon="inventory_2" dense expand-separator class="nav-group nav-group--inventory">
             <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.ApplicationsRead)"
@@ -275,6 +270,10 @@
           </q-expansion-item>
 
           <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator class="nav-group nav-group--integrations">
+            <q-item v-if="fuseStore.appSettings?.scrumPokerEnabled" clickable v-ripple :to="{ name: 'scrumPoker' }" active-class="bg-primary text-white">
+              <q-item-section avatar><q-icon name="style" /></q-item-section>
+              <q-item-section>Scrum Poker</q-item-section>
+            </q-item>
             <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
               v-if="fuseStore.canRead"
               data-tour-id="nav-kuma-integrations">
