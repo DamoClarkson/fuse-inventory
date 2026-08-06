@@ -1,0 +1,44 @@
+namespace Fuse.Core.Areas.ScrumPoker;
+
+public enum ScrumPokerCard
+{
+    Zero,
+    Half,
+    One,
+    Two,
+    Three,
+    Five,
+    Eight,
+    Thirteen,
+    Twenty,
+    Forty,
+    Hundred,
+    Question,
+    Coffee
+}
+
+public enum ScrumPokerPhase
+{
+    Voting,
+    Revealed
+}
+
+public sealed record ScrumPokerParticipant(
+    Guid Id,
+    string DisplayName,
+    string Token,
+    ScrumPokerCard? SelectedCard,
+    DateTime LastSeenUtc);
+
+public sealed record ScrumPokerRoom(
+    string RoomCode,
+    int Round,
+    ScrumPokerPhase Phase,
+    long Revision,
+    DateTime CreatedUtc,
+    DateTime LastActivityUtc,
+    IReadOnlyList<ScrumPokerParticipant> Participants);
+
+public sealed record ScrumPokerSession(
+    ScrumPokerRoom Room,
+    ScrumPokerParticipant Participant);

@@ -23,6 +23,7 @@ using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.SqlIntegration;
 using Fuse.Core.Areas.Tag;
 using Fuse.Core.Areas.Undo;
+using Fuse.Core.Areas.ScrumPoker;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Services;
 using Fuse.Core.Services.Startup;
@@ -63,6 +64,7 @@ public static class FuseCodeModule
         services.AddScoped<IFuseAPIKeyService, FuseAPIKeyService>();
         services.AddScoped<IAppSettingsService, AppSettingsService>();
         services.AddScoped<ILicenseService, LicenseService>();
+        services.AddSingleton<IScrumPokerStore, InMemoryScrumPokerStore>();
         services.AddHttpClient("license-validator", client =>
         {
             client.BaseAddress = new Uri("https://api.fuse-inventory.dev/");

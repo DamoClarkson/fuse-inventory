@@ -27,6 +27,22 @@
 
       <section class="settings-section">
         <div class="section-heading">
+          <h2>Collaboration</h2>
+          <p>Enable lightweight tools for temporary team sessions.</p>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Enable Scrum Poker</div>
+            <div class="setting-help">Allow users to create temporary Scrum Poker rooms without needing a Fuse account.</div>
+          </div>
+          <q-toggle v-model="scrumPokerEnabled" :disable="!canEdit" aria-label="Enable Scrum Poker" />
+        </div>
+      </section>
+
+      <q-separator />
+
+      <section class="settings-section">
+        <div class="section-heading">
           <h2>AI / MCP integration</h2>
           <p>Allow approved AI clients to review and update inventory through the Model Context Protocol.</p>
         </div>
@@ -247,6 +263,10 @@ const hideValidLicenseChip = computed({
 const mcpServerEnabled = computed({
   get: () => fuseStore.appSettings?.mcpServerEnabled ?? false,
   set: (value: boolean) => void fuseStore.updateAppSettings({ mcpServerEnabled: value })
+})
+const scrumPokerEnabled = computed({
+  get: () => fuseStore.appSettings?.scrumPokerEnabled ?? false,
+  set: (value: boolean) => void fuseStore.updateAppSettings({ scrumPokerEnabled: value })
 })
 const mcpEndpoint = computed(() => `${window.location.origin}/api/mcp`)
 

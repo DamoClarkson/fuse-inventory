@@ -5,6 +5,16 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: '/scrum-poker',
+      name: 'scrumPoker',
+      component: () => import('./pages/ScrumPokerPage.vue')
+    },
+    {
+      path: '/scrum-poker/:roomCode',
+      name: 'scrumPokerRoom',
+      component: () => import('./pages/ScrumPokerPage.vue')
+    },
+    {
       path: '/',
       name: 'home',
       component: () => import('./pages/HomePage.vue')

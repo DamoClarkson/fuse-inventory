@@ -9,7 +9,8 @@ public record AppSettings
     int? AuditLogDaysToKeep = null, // null = unlimited
     HealthCheckProvider HealthCheckProvider = HealthCheckProvider.None,
     LoggingSettings? Logging = null,
-    bool McpServerEnabled = false
+    bool McpServerEnabled = false,
+    bool ScrumPokerEnabled = false
 );
 
 public enum HealthCheckProvider
