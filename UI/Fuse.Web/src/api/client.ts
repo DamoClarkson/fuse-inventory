@@ -229,6 +229,13 @@ export interface IFuseApiClient {
      */
     updateAppSettings(body: AppSettings | undefined, signal?: AbortSignal): Promise<void>;
 
+    scrumPokerRoomsPOST(body: ScrumPokerJoinRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerSessionResponse>;
+    scrumPokerRoomsJoin(roomCode: string, body: ScrumPokerJoinRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerSessionResponse>;
+    scrumPokerState(roomCode: string, participantToken: string, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
+    scrumPokerCardPUT(roomCode: string, body: ScrumPokerCardRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
+    scrumPokerReveal(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
+    scrumPokerReset(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
+
     /**
      * @param startTime (optional) 
      * @param endTime (optional) 
@@ -3117,6 +3124,63 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+
+    scrumPokerRoomsPOST(body: ScrumPokerJoinRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerSessionResponse> {
+        let url_ = this.baseUrl + "/api/scrum-poker/rooms";
+        url_ = url_.replace(/[?&]$/, "");
+        const content_ = JSON.stringify(body);
+        return this.http.fetch(url_, { body: content_, method: "POST", signal, headers: { "Content-Type": "application/json", "Accept": "application/json" } })
+            .then((response) => this.processScrumPokerResponse(response, (data) => ScrumPokerSessionResponse.fromJS(data), [201]));
+    }
+
+    scrumPokerRoomsJoin(roomCode: string, body: ScrumPokerJoinRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerSessionResponse> {
+        let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/join";
+        if (roomCode === undefined || roomCode === null) throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+        url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+        const content_ = JSON.stringify(body);
+        return this.http.fetch(url_, { body: content_, method: "POST", signal, headers: { "Content-Type": "application/json", "Accept": "application/json" } })
+            .then((response) => this.processScrumPokerResponse(response, (data) => ScrumPokerSessionResponse.fromJS(data), [200]));
+    }
+
+    scrumPokerState(roomCode: string, participantToken: string, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
+        let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/state?participantToken={participantToken}";
+        if (roomCode === undefined || roomCode === null) throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+        if (participantToken === undefined || participantToken === null) throw new globalThis.Error("The parameter 'participantToken' must be defined.");
+        url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+        url_ = url_.replace("{participantToken}", encodeURIComponent("" + participantToken));
+        return this.http.fetch(url_, { method: "GET", signal, headers: { "Accept": "application/json" } })
+            .then((response) => this.processScrumPokerResponse(response, (data) => ScrumPokerRoomResponse.fromJS(data), [200]));
+    }
+
+    scrumPokerCardPUT(roomCode: string, body: ScrumPokerCardRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
+        return this.scrumPokerCommand(roomCode, "/card", "PUT", body, signal);
+    }
+
+    scrumPokerReveal(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
+        return this.scrumPokerCommand(roomCode, "/reveal", "POST", body, signal);
+    }
+
+    scrumPokerReset(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
+        return this.scrumPokerCommand(roomCode, "/reset", "POST", body, signal);
+    }
+
+    private scrumPokerCommand(roomCode: string, action: string, method: string, body: any, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
+        let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}" + action;
+        if (roomCode === undefined || roomCode === null) throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+        url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+        const content_ = JSON.stringify(body);
+        return this.http.fetch(url_, { body: content_, method, signal, headers: { "Content-Type": "application/json", "Accept": "application/json" } })
+            .then((response) => this.processScrumPokerResponse(response, (data) => ScrumPokerRoomResponse.fromJS(data), [200]));
+    }
+
+    private processScrumPokerResponse<T>(response: Response, factory: (data: any) => T, successStatuses: number[]): Promise<T> {
+        const status = response.status;
+        let headers: any = {}; if (response.headers && response.headers.forEach) response.headers.forEach((v: any, k: any) => headers[k] = v);
+        if (successStatuses.includes(status)) {
+            return response.text().then((text) => factory(text === "" ? null : JSON.parse(text, this.jsonParseReviver)));
+        }
+        return response.text().then((text) => throwException("Scrum Poker request failed.", status, text, headers));
     }
 
     /**
@@ -10851,6 +10915,7 @@ export class AppSettings implements IAppSettings {
     healthCheckProvider?: HealthCheckProvider;
     logging?: LoggingSettings;
     mcpServerEnabled?: boolean;
+    scrumPokerEnabled?: boolean;
 
     constructor(data?: IAppSettings) {
         if (data) {
@@ -10871,6 +10936,7 @@ export class AppSettings implements IAppSettings {
             this.healthCheckProvider = _data["healthCheckProvider"];
             this.logging = _data["logging"] ? LoggingSettings.fromJS(_data["logging"]) : undefined as any;
             this.mcpServerEnabled = _data["mcpServerEnabled"];
+            this.scrumPokerEnabled = _data["scrumPokerEnabled"];
         }
     }
 
@@ -10891,6 +10957,7 @@ export class AppSettings implements IAppSettings {
         data["healthCheckProvider"] = this.healthCheckProvider;
         data["logging"] = this.logging ? this.logging.toJSON() : undefined as any;
         data["mcpServerEnabled"] = this.mcpServerEnabled;
+        data["scrumPokerEnabled"] = this.scrumPokerEnabled;
         return data;
     }
 }
@@ -10904,6 +10971,7 @@ export interface IAppSettings {
     healthCheckProvider?: HealthCheckProvider;
     logging?: LoggingSettings;
     mcpServerEnabled?: boolean;
+    scrumPokerEnabled?: boolean;
 }
 
 export class Application implements IApplication {
@@ -19689,6 +19757,88 @@ export interface IUserGuideProgress {
     hasCompletedGettingStarted?: boolean;
     lastCompletedAt?: Date | undefined;
     updatedAt?: Date;
+}
+
+export enum ScrumPokerCard {
+    Zero = "Zero",
+    Half = "Half",
+    One = "One",
+    Two = "Two",
+    Three = "Three",
+    Five = "Five",
+    Eight = "Eight",
+    Thirteen = "Thirteen",
+    Twenty = "Twenty",
+    Forty = "Forty",
+    Hundred = "Hundred",
+    Question = "Question",
+    Coffee = "Coffee",
+}
+
+export enum ScrumPokerPhase {
+    Voting = "Voting",
+    Revealed = "Revealed",
+}
+
+export interface IScrumPokerJoinRequest { displayName?: string; }
+export class ScrumPokerJoinRequest implements IScrumPokerJoinRequest {
+    displayName?: string;
+    constructor(data?: IScrumPokerJoinRequest) { if (data) this.displayName = data.displayName; }
+    static fromJS(data: any): ScrumPokerJoinRequest { return new ScrumPokerJoinRequest(data); }
+    toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["displayName"] = this.displayName; return data; }
+}
+
+export interface IScrumPokerParticipantRequest { participantToken?: string; }
+export class ScrumPokerParticipantRequest implements IScrumPokerParticipantRequest {
+    participantToken?: string;
+    constructor(data?: IScrumPokerParticipantRequest) { if (data) this.participantToken = data.participantToken; }
+    static fromJS(data: any): ScrumPokerParticipantRequest { return new ScrumPokerParticipantRequest(data); }
+    toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["participantToken"] = this.participantToken; return data; }
+}
+
+export interface IScrumPokerCardRequest extends IScrumPokerParticipantRequest { card?: ScrumPokerCard; }
+export class ScrumPokerCardRequest implements IScrumPokerCardRequest {
+    participantToken?: string;
+    card?: ScrumPokerCard;
+    constructor(data?: IScrumPokerCardRequest) { if (data) { this.participantToken = data.participantToken; this.card = data.card; } }
+    static fromJS(data: any): ScrumPokerCardRequest { return new ScrumPokerCardRequest(data); }
+    toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["participantToken"] = this.participantToken; data["card"] = this.card; return data; }
+}
+
+export interface IScrumPokerParticipantResponse {
+    id?: string;
+    displayName?: string;
+    hasVoted?: boolean;
+    card?: ScrumPokerCard | undefined;
+}
+export class ScrumPokerParticipantResponse implements IScrumPokerParticipantResponse {
+    id?: string; displayName?: string; hasVoted?: boolean; card?: ScrumPokerCard | undefined;
+    constructor(data?: IScrumPokerParticipantResponse) { if (data) { this.id = data.id; this.displayName = data.displayName; this.hasVoted = data.hasVoted; this.card = data.card; } }
+    static fromJS(data: any): ScrumPokerParticipantResponse { return new ScrumPokerParticipantResponse(data); }
+    init(_data?: any) { if (_data) { this.id = _data["id"]; this.displayName = _data["displayName"]; this.hasVoted = _data["hasVoted"]; this.card = _data["card"]; } }
+    toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["id"] = this.id; data["displayName"] = this.displayName; data["hasVoted"] = this.hasVoted; data["card"] = this.card; return data; }
+}
+
+export interface IScrumPokerRoomResponse {
+    roomCode?: string; round?: number; phase?: ScrumPokerPhase; revision?: number;
+    createdUtc?: Date; lastActivityUtc?: Date; participants?: ScrumPokerParticipantResponse[];
+}
+export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
+    roomCode?: string; round?: number; phase?: ScrumPokerPhase; revision?: number;
+    createdUtc?: Date; lastActivityUtc?: Date; participants?: ScrumPokerParticipantResponse[];
+    constructor(data?: IScrumPokerRoomResponse) { if (data) Object.assign(this, data); }
+    init(_data?: any) { if (_data) { this.roomCode = _data["roomCode"]; this.round = _data["round"]; this.phase = _data["phase"]; this.revision = _data["revision"]; this.createdUtc = _data["createdUtc"] ? new Date(_data["createdUtc"].toString()) : undefined; this.lastActivityUtc = _data["lastActivityUtc"] ? new Date(_data["lastActivityUtc"].toString()) : undefined; this.participants = Array.isArray(_data["participants"]) ? _data["participants"].map((x: any) => ScrumPokerParticipantResponse.fromJS(x)) : undefined; } }
+    static fromJS(data: any): ScrumPokerRoomResponse { const result = new ScrumPokerRoomResponse(); result.init(data); return result; }
+    toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["roomCode"] = this.roomCode; data["round"] = this.round; data["phase"] = this.phase; data["revision"] = this.revision; data["createdUtc"] = this.createdUtc?.toISOString(); data["lastActivityUtc"] = this.lastActivityUtc?.toISOString(); data["participants"] = this.participants?.map(x => x.toJSON()); return data; }
+}
+
+export interface IScrumPokerSessionResponse { roomCode?: string; participantToken?: string; room?: ScrumPokerRoomResponse; }
+export class ScrumPokerSessionResponse implements IScrumPokerSessionResponse {
+    roomCode?: string; participantToken?: string; room?: ScrumPokerRoomResponse;
+    constructor(data?: IScrumPokerSessionResponse) { if (data) { this.roomCode = data.roomCode; this.participantToken = data.participantToken; this.room = data.room; } }
+    init(_data?: any) { if (_data) { this.roomCode = _data["roomCode"]; this.participantToken = _data["participantToken"]; this.room = _data["room"] ? ScrumPokerRoomResponse.fromJS(_data["room"]) : undefined; } }
+    static fromJS(data: any): ScrumPokerSessionResponse { const result = new ScrumPokerSessionResponse(); result.init(data); return result; }
+    toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["roomCode"] = this.roomCode; data["participantToken"] = this.participantToken; data["room"] = this.room?.toJSON(); return data; }
 }
 
 export interface FileParameter {
