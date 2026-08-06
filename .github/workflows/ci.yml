@@ -6,12 +6,11 @@ permissions:
 
 on:
   push:
-    branches:
-      - '**'
+    branches: [ main ]
     tags:
       - 'v*.*.*'
   pull_request:
-  workflow_dispatch:
+    branches: [ main ]
 
 env:
   REGISTRY: ghcr.io
