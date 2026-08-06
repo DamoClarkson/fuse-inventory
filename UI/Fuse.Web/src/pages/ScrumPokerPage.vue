@@ -190,7 +190,17 @@ async function hideCards() { await roomAction(() => client.scrumPokerHide(sessio
 async function resetRound() { await roomAction(() => client.scrumPokerReset(session.value!.roomCode!, { participantToken: session.value!.participantToken } as any)) ; selectedCard.value = null }
 async function roomAction(action: () => Promise<ScrumPokerRoomResponse>) { actionLoading.value = true; errorMessage.value = ''; try { room.value = await action() } catch (error) { errorMessage.value = error instanceof Error ? error.message : 'Unable to update the room.' } finally { actionLoading.value = false } }
 async function copyRoomCode() { if (session.value?.roomCode) { await navigator.clipboard?.writeText(session.value.roomCode); Notify.create({ message: 'Room code copied', color: 'positive' }) } }
-function leaveRoom() { if (session.value?.roomCode) sessionStorage.removeItem(storageKey(session.value.roomCode)); stopPolling(); session.value = null; room.value = null; selectedCard.value = null; void router.replace({ name: 'scrumPoker' }) }
+async function leaveRoom() {
+  const currentSession = session.value
+  stopPolling()
+  if (currentSession?.roomCode && currentSession.participantToken) {
+    try { await client.scrumPokerLeave(currentSession.roomCode, { participantToken: currentSession.participantToken } as any) }
+    catch { /* The local session should still be cleared if the room has already expired. */ }
+    sessionStorage.removeItem(storageKey(currentSession.roomCode))
+  }
+  session.value = null; room.value = null; selectedCard.value = null; participantName.value = ''
+  await router.replace({ name: 'scrumPoker' })
+}
 
 async function loadStoredSession() {
   if (!featureEnabled.value) return

@@ -138,4 +138,20 @@ public sealed class ScrumPokerStoreTests
         Assert.Equal(ErrorType.NotFound, join.ErrorType);
         Assert.Equal(ErrorType.NotFound, read.ErrorType);
     }
+
+    [Fact]
+    public void Leave_RemovesParticipantAndAllowsTheSameNameToRejoin()
+    {
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Alice", Start).Value!;
+        var guest = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(1)).Value!;
+
+        var left = store.Leave(owner.Room.RoomCode, guest.Participant.Token, Start.AddSeconds(2));
+        var rejoined = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(3));
+
+        Assert.True(left.IsSuccess);
+        Assert.DoesNotContain(left.Value!.Participants, participant => participant.DisplayName == "Bob");
+        Assert.True(rejoined.IsSuccess);
+        Assert.NotEqual(guest.Participant.Token, rejoined.Value!.Participant.Token);
+    }
 }

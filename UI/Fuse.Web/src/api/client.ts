@@ -236,6 +236,7 @@ export interface IFuseApiClient {
     scrumPokerReveal(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
     scrumPokerHide(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
     scrumPokerReset(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse>;
+    scrumPokerLeave(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
      * @param startTime (optional) 
@@ -3168,6 +3169,22 @@ export class FuseApiClient implements IFuseApiClient {
 
     scrumPokerReset(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {
         return this.scrumPokerCommand(roomCode, "/reset", "POST", body, signal);
+    }
+
+    scrumPokerLeave(roomCode: string, body: ScrumPokerParticipantRequest | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/leave";
+        if (roomCode === undefined || roomCode === null) throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+        url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+        const content_ = JSON.stringify(body);
+        return this.http.fetch(url_, { body: content_, method: "POST", signal, headers: { "Content-Type": "application/json" } })
+            .then((response) => this.processScrumPokerVoidResponse(response));
+    }
+
+    private processScrumPokerVoidResponse(response: Response): Promise<void> {
+        const status = response.status;
+        let headers: any = {}; if (response.headers && response.headers.forEach) response.headers.forEach((v: any, k: any) => headers[k] = v);
+        if (status === 204) return response.text().then(() => undefined);
+        return response.text().then((text) => throwException("Unable to leave the Scrum Poker room.", status, text, headers));
     }
 
     private scrumPokerCommand(roomCode: string, action: string, method: string, body: any, signal?: AbortSignal): Promise<ScrumPokerRoomResponse> {

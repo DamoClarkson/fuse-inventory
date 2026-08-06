@@ -108,6 +108,19 @@ public sealed class ScrumPokerController(
         return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.ParticipantToken)) : ToError<ScrumPokerRoomResponse>(result);
     }
 
+    [HttpPost("rooms/{roomCode}/leave")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Leave(string roomCode, [FromBody] ScrumPokerParticipantRequest request)
+    {
+        if (!await IsEnabled())
+            return NotFound();
+
+        var result = store.Leave(roomCode, request.ParticipantToken, DateTime.UtcNow);
+        return result.IsSuccess ? NoContent() : ToErrorResult(result);
+    }
+
     private Task<bool> IsEnabled() => fuseStore.GetAsync(snapshot => snapshot.AppSettings.ScrumPokerEnabled);
 
     private static ScrumPokerSessionResponse ToSessionResponse(ScrumPokerSession session) =>
@@ -130,6 +143,14 @@ public sealed class ScrumPokerController(
                     : null)).ToArray());
 
     private static ActionResult<T> ToError<T>(FuseResult result) => result.ErrorType switch
+    {
+        ErrorType.NotFound => new NotFoundObjectResult(new { error = result.Error }),
+        ErrorType.Unauthorized => new UnauthorizedObjectResult(new { error = result.Error }),
+        ErrorType.Conflict => new ConflictObjectResult(new { error = result.Error }),
+        _ => new BadRequestObjectResult(new { error = result.Error })
+    };
+
+    private static IActionResult ToErrorResult(FuseResult result) => result.ErrorType switch
     {
         ErrorType.NotFound => new NotFoundObjectResult(new { error = result.Error }),
         ErrorType.Unauthorized => new UnauthorizedObjectResult(new { error = result.Error }),

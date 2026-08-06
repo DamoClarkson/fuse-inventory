@@ -169,7 +169,7 @@ The feature is ready when:
 
 - [ ] Confirm exact maximum room size and expiry duration through UI/testing feedback.
 - [ ] Decide whether the room creator needs a visible host indicator; no special host permissions are currently planned.
-- [ ] Decide whether a participant can leave explicitly or simply expire through inactivity.
+- [x] Participants can leave explicitly; the server removes them immediately while retaining an empty room until normal expiry.
 - [ ] Decide whether cards should be configurable in a later version; the first version uses the fixed standard deck.
 
 ## Progress log
@@ -182,3 +182,4 @@ The feature is ready when:
 | 2026-08-06 | Added the anonymous Scrum Poker API, App Settings enforcement, participant-token validation, and safe public-state projection. Added controller tests for disabled access and card redaction. Non-integration suite passes: 569 tests, 0 failures. |
 | 2026-08-06 | Added the checked-in frontend API client methods, create/join and room routes, polling room UI, standard card controls, reveal/reset actions, room-code copying, and feature-gated navigation. Vue type-check and production build pass. |
 | 2026-08-06 | Added card deselection, reversible reveal/hide behaviour, and moved the Scrum Poker navigation item into Integrations. Backend suite passes 571 tests; frontend production build passes. |
+| 2026-08-06 | Added a real leave-room API operation so participants are removed server-side and can rejoin with the same display name. Backend suite passes 572 tests; frontend production build passes. |

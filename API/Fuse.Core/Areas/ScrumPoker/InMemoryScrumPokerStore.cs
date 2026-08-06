@@ -173,6 +173,22 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         }
     }
 
+    public Result<ScrumPokerRoom> Leave(string roomCode, string participantToken, DateTime utcNow)
+    {
+        var stateResult = GetParticipantRoom(roomCode, participantToken, utcNow);
+        if (!stateResult.IsSuccess)
+            return Result<ScrumPokerRoom>.Failure(stateResult.Error!, stateResult);
+
+        var (state, participant) = stateResult.Value!;
+        lock (state.Gate)
+        {
+            state.Participants.Remove(participant.Id);
+            state.LastActivityUtc = utcNow;
+            state.Revision++;
+            return Result<ScrumPokerRoom>.Success(CreateRoomSnapshot(state));
+        }
+    }
+
     private Result<string> ValidateDisplayName(string displayName)
     {
         var normalized = displayName?.Trim();
