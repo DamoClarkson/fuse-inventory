@@ -41,6 +41,19 @@ public sealed class ScrumPokerController(
         return result.IsSuccess ? Ok(ToSessionResponse(result.Value!)) : ToError<ScrumPokerSessionResponse>(result);
     }
 
+    [HttpPost("rooms/{roomCode}/enter")]
+    [ProducesResponseType<ScrumPokerSessionResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ScrumPokerSessionResponse>> EnterRoom(string roomCode, [FromBody] ScrumPokerJoinRequest request)
+    {
+        if (!await IsEnabled())
+            return NotFound();
+
+        var result = store.JoinOrCreateRoom(roomCode, request.DisplayName, DateTime.UtcNow);
+        return result.IsSuccess ? Ok(ToSessionResponse(result.Value!)) : ToError<ScrumPokerSessionResponse>(result);
+    }
+
     [HttpGet("rooms/{roomCode}/state")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -134,6 +147,7 @@ public sealed class ScrumPokerController(
             room.Revision,
             room.CreatedUtc,
             room.LastActivityUtc,
+            room.Phase == ScrumPokerPhase.Revealed ? CalculateAverage(room) : null,
             room.Participants.Select(participant => new ScrumPokerParticipantResponse(
                 participant.Id,
                 participant.DisplayName,
@@ -141,6 +155,31 @@ public sealed class ScrumPokerController(
                 room.Phase == ScrumPokerPhase.Revealed || FixedTimeEquals(participant.Token, participantToken)
                     ? participant.SelectedCard
                     : null)).ToArray());
+
+    private static double? CalculateAverage(ScrumPokerRoom room)
+    {
+        var values = room.Participants
+            .Select(participant => participant.SelectedCard switch
+            {
+                ScrumPokerCard.Zero => 0d,
+                ScrumPokerCard.Half => 0.5d,
+                ScrumPokerCard.One => 1d,
+                ScrumPokerCard.Two => 2d,
+                ScrumPokerCard.Three => 3d,
+                ScrumPokerCard.Five => 5d,
+                ScrumPokerCard.Eight => 8d,
+                ScrumPokerCard.Thirteen => 13d,
+                ScrumPokerCard.Twenty => 20d,
+                ScrumPokerCard.Forty => 40d,
+                ScrumPokerCard.Hundred => 100d,
+                _ => (double?)null
+            })
+            .Where(value => value.HasValue)
+            .Select(value => value!.Value)
+            .ToArray();
+
+        return values.Length == 0 ? null : Math.Round(values.Average(), 2);
+    }
 
     private static ActionResult<T> ToError<T>(FuseResult result) => result.ErrorType switch
     {
@@ -188,6 +227,7 @@ public sealed record ScrumPokerRoomResponse(
     long Revision,
     DateTime CreatedUtc,
     DateTime LastActivityUtc,
+    double? Average,
     IReadOnlyList<ScrumPokerParticipantResponse> Participants);
 
 public sealed record ScrumPokerParticipantResponse(

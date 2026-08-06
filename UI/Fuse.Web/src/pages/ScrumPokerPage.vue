@@ -17,13 +17,17 @@
         <div class="text-caption text-grey-6 q-mt-xs">Choose a display name, then share the room code with your team.</div>
       </q-card-section>
       <q-card-section>
-        <q-input v-model="displayName" outlined label="Your display name" maxlength="50" counter @keyup.enter="createRoom" />
-        <q-input v-model="joinCode" outlined label="Room code (to join an existing room)" class="q-mt-md" maxlength="20" @keyup.enter="joinRoom" />
+        <q-input v-model="displayName" outlined label="Your display name" maxlength="50" counter @keyup.enter="roomCodeFromUrl ? enterRoom() : createRoom()" />
+        <q-banner v-if="roomCodeFromUrl" rounded dense class="bg-blue-1 text-primary q-mt-md">You’re entering room <strong>{{ roomCodeFromUrl }}</strong>.</q-banner>
+        <q-input v-else v-model="joinCode" outlined label="Room code (to join an existing room)" class="q-mt-md" maxlength="20" @keyup.enter="joinRoom" />
         <q-banner v-if="errorMessage" rounded dense class="bg-red-1 text-negative q-mt-md">{{ errorMessage }}</q-banner>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="Join room" :disable="!canSubmit || !joinCode" :loading="loading" @click="joinRoom" />
-        <q-btn color="primary" label="Create room" :disable="!canSubmit" :loading="loading" @click="createRoom" />
+        <q-btn v-if="roomCodeFromUrl" color="primary" label="Enter room" :disable="!canSubmit" :loading="loading" @click="enterRoom" />
+        <template v-else>
+          <q-btn flat label="Join room" :disable="!canSubmit || !joinCode" :loading="loading" @click="joinRoom" />
+          <q-btn color="primary" label="Create room" :disable="!canSubmit" :loading="loading" @click="createRoom" />
+        </template>
       </q-card-actions>
     </q-card>
 
@@ -48,7 +52,10 @@
                 <div class="text-h6">Round {{ room?.round ?? 1 }}</div>
                 <div class="text-caption text-grey-6">{{ room?.phase === ScrumPokerPhase.Revealed ? 'Cards revealed' : 'Voting in progress' }}</div>
               </div>
-              <q-badge :color="room?.phase === ScrumPokerPhase.Revealed ? 'positive' : 'primary'" :label="room?.phase ?? 'Voting'" />
+              <div class="row items-center q-gutter-md">
+                <div v-if="room?.phase === ScrumPokerPhase.Revealed && room.average !== undefined && room.average !== null" class="text-subtitle1 text-weight-medium">Average: {{ room.average }}</div>
+                <q-badge :color="room?.phase === ScrumPokerPhase.Revealed ? 'positive' : 'primary'" :label="room?.phase ?? 'Voting'" />
+              </div>
             </q-card-section>
             <q-separator />
             <q-card-section>
@@ -120,6 +127,7 @@ const selectedCard = ref<ScrumPokerCard | null>(null)
 let pollTimer: ReturnType<typeof setInterval> | undefined
 
 const featureEnabled = computed(() => fuseStore.appSettings?.scrumPokerEnabled === true)
+const roomCodeFromUrl = computed(() => typeof route.params.roomCode === 'string' ? route.params.roomCode.toUpperCase() : '')
 const canSubmit = computed(() => displayName.value.trim().length > 0 && displayName.value.trim().length <= 50)
 const currentParticipantId = computed(() => room.value?.participants?.find(p => p.displayName === participantName.value)?.id)
 const cards = [
@@ -142,6 +150,11 @@ async function joinRoom() {
   if (!canSubmit.value || !joinCode.value.trim()) return
   const code = joinCode.value.trim().toUpperCase()
   await runSessionAction(() => client.scrumPokerRoomsJoin(code, { displayName: displayName.value.trim() } as any))
+}
+
+async function enterRoom() {
+  if (!canSubmit.value || !roomCodeFromUrl.value) return
+  await runSessionAction(() => client.scrumPokerRoomsEnter(roomCodeFromUrl.value, { displayName: displayName.value.trim() } as any))
 }
 
 async function runSessionAction(action: () => Promise<ScrumPokerSessionResponse>) {

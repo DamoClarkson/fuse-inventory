@@ -154,4 +154,15 @@ public sealed class ScrumPokerStoreTests
         Assert.True(rejoined.IsSuccess);
         Assert.NotEqual(guest.Participant.Token, rejoined.Value!.Participant.Token);
     }
+
+    [Fact]
+    public void JoinOrCreateRoom_CreatesTheRoomUsingTheUrlCodeWhenMissing()
+    {
+        var store = new InMemoryScrumPokerStore();
+
+        var result = store.JoinOrCreateRoom("team-planning", "Alice", Start);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("TEAM-PLANNING", result.Value!.Room.RoomCode);
+    }
 }

@@ -71,6 +71,31 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         }
     }
 
+    public Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow)
+    {
+        var nameResult = ValidateDisplayName(displayName);
+        if (!nameResult.IsSuccess)
+            return Result<ScrumPokerSession>.Failure(nameResult.Error!, nameResult);
+
+        var normalizedCode = NormalizeRoomCode(roomCode);
+        if (normalizedCode is null)
+            return Result<ScrumPokerSession>.Failure("The room code is invalid.");
+
+        if (FindActiveRoom(normalizedCode, utcNow) is not null)
+            return JoinRoom(normalizedCode, nameResult.Value!, utcNow);
+
+        lock (_roomsLock)
+        {
+            if (_rooms.ContainsKey(normalizedCode))
+                return JoinRoom(normalizedCode, nameResult.Value!, utcNow);
+
+            var participant = CreateParticipant(nameResult.Value!, utcNow);
+            var state = new RoomState(normalizedCode, utcNow, participant);
+            _rooms.Add(normalizedCode, state);
+            return Result<ScrumPokerSession>.Success(CreateSession(state));
+        }
+    }
+
     public Result<ScrumPokerRoom> GetRoom(string roomCode, string participantToken, DateTime utcNow)
     {
         var stateResult = GetParticipantRoom(roomCode, participantToken, utcNow);
@@ -197,6 +222,14 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             : normalized.Length > MaxDisplayNameLength
                 ? Result<string>.Failure($"Display names must be {MaxDisplayNameLength} characters or fewer.")
                 : Result<string>.Success(normalized);
+    }
+
+    private static string? NormalizeRoomCode(string roomCode)
+    {
+        var normalized = roomCode?.Trim().ToUpperInvariant();
+        return string.IsNullOrEmpty(normalized) || normalized.Length > 20 || normalized.Any(char.IsWhiteSpace)
+            ? null
+            : normalized;
     }
 
     private RoomState? FindActiveRoom(string roomCode, DateTime utcNow)
