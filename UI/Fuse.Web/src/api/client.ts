@@ -19852,16 +19852,16 @@ export class ScrumPokerParticipantResponse implements IScrumPokerParticipantResp
 }
 
 export interface IScrumPokerRoomResponse {
-    roomCode?: string; round?: number; phase?: ScrumPokerPhase; revision?: number; average?: number | undefined;
+    roomCode?: string; round?: number; phase?: ScrumPokerPhase; autoReveal?: boolean; revision?: number; average?: number | undefined;
     createdUtc?: Date; lastActivityUtc?: Date; participants?: ScrumPokerParticipantResponse[];
 }
 export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
-    roomCode?: string; round?: number; phase?: ScrumPokerPhase; revision?: number; average?: number | undefined;
+    roomCode?: string; round?: number; phase?: ScrumPokerPhase; autoReveal?: boolean; revision?: number; average?: number | undefined;
     createdUtc?: Date; lastActivityUtc?: Date; participants?: ScrumPokerParticipantResponse[];
     constructor(data?: IScrumPokerRoomResponse) { if (data) Object.assign(this, data); }
-    init(_data?: any) { if (_data) { this.roomCode = _data["roomCode"]; this.round = _data["round"]; this.phase = _data["phase"]; this.revision = _data["revision"]; this.average = _data["average"]; this.createdUtc = _data["createdUtc"] ? new Date(_data["createdUtc"].toString()) : undefined; this.lastActivityUtc = _data["lastActivityUtc"] ? new Date(_data["lastActivityUtc"].toString()) : undefined; this.participants = Array.isArray(_data["participants"]) ? _data["participants"].map((x: any) => ScrumPokerParticipantResponse.fromJS(x)) : undefined; } }
+    init(_data?: any) { if (_data) { this.roomCode = _data["roomCode"]; this.round = _data["round"]; this.phase = _data["phase"]; this.autoReveal = _data["autoReveal"]; this.revision = _data["revision"]; this.average = _data["average"]; this.createdUtc = _data["createdUtc"] ? new Date(_data["createdUtc"].toString()) : undefined; this.lastActivityUtc = _data["lastActivityUtc"] ? new Date(_data["lastActivityUtc"].toString()) : undefined; this.participants = Array.isArray(_data["participants"]) ? _data["participants"].map((x: any) => ScrumPokerParticipantResponse.fromJS(x)) : undefined; } }
     static fromJS(data: any): ScrumPokerRoomResponse { const result = new ScrumPokerRoomResponse(); result.init(data); return result; }
-    toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["roomCode"] = this.roomCode; data["round"] = this.round; data["phase"] = this.phase; data["revision"] = this.revision; data["average"] = this.average; data["createdUtc"] = this.createdUtc?.toISOString(); data["lastActivityUtc"] = this.lastActivityUtc?.toISOString(); data["participants"] = this.participants?.map(x => x.toJSON()); return data; }
+    toJSON(data?: any) { data = typeof data === 'object' ? data : {}; data["roomCode"] = this.roomCode; data["round"] = this.round; data["phase"] = this.phase; data["autoReveal"] = this.autoReveal; data["revision"] = this.revision; data["average"] = this.average; data["createdUtc"] = this.createdUtc?.toISOString(); data["lastActivityUtc"] = this.lastActivityUtc?.toISOString(); data["participants"] = this.participants?.map(x => x.toJSON()); return data; }
 }
 
 export interface IScrumPokerSessionResponse { roomCode?: string; participantToken?: string; room?: ScrumPokerRoomResponse; }

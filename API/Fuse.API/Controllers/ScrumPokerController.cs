@@ -82,6 +82,19 @@ public sealed class ScrumPokerController(
         return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.ParticipantToken)) : ToError<ScrumPokerRoomResponse>(result);
     }
 
+    [HttpPost("rooms/{roomCode}/settings/auto-reveal")]
+    [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ScrumPokerRoomResponse>> SetAutoReveal(string roomCode, [FromBody] ScrumPokerAutoRevealRequest request)
+    {
+        if (!await IsEnabled())
+            return NotFound();
+
+        var result = store.SetAutoReveal(roomCode, request.ParticipantToken, request.Enabled, DateTime.UtcNow);
+        return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.ParticipantToken)) : ToError<ScrumPokerRoomResponse>(result);
+    }
+
     [HttpPost("rooms/{roomCode}/reveal")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -144,6 +157,7 @@ public sealed class ScrumPokerController(
             room.RoomCode,
             room.Round,
             room.Phase,
+            room.AutoReveal,
             room.Revision,
             room.CreatedUtc,
             room.LastActivityUtc,
@@ -215,6 +229,8 @@ public sealed record ScrumPokerParticipantRequest(string ParticipantToken);
 
 public sealed record ScrumPokerCardRequest(string ParticipantToken, ScrumPokerCard? Card);
 
+public sealed record ScrumPokerAutoRevealRequest(string ParticipantToken, bool Enabled);
+
 public sealed record ScrumPokerSessionResponse(
     string RoomCode,
     string ParticipantToken,
@@ -224,6 +240,7 @@ public sealed record ScrumPokerRoomResponse(
     string RoomCode,
     int Round,
     ScrumPokerPhase Phase,
+    bool AutoReveal,
     long Revision,
     DateTime CreatedUtc,
     DateTime LastActivityUtc,

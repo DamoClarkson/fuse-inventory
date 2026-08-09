@@ -21,6 +21,7 @@ public sealed class ScrumPokerStoreTests
         Assert.NotEmpty(result.Value.Participant.Token);
         Assert.Equal(ScrumPokerPhase.Voting, result.Value.Room.Phase);
         Assert.Equal(1, result.Value.Room.Round);
+        Assert.False(result.Value.Room.AutoReveal);
     }
 
     [Fact]
@@ -91,6 +92,39 @@ public sealed class ScrumPokerStoreTests
 
         Assert.Equal(ScrumPokerPhase.Revealed, first.Value!.Phase);
         Assert.Equal(first.Value.Revision, second.Value!.Revision);
+    }
+
+    [Fact]
+    public void SetAutoReveal_IsSharedForAllParticipantsAndDefaultsOff()
+    {
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Alice", Start).Value!;
+        var guest = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(1)).Value!;
+
+        Assert.False(owner.Room.AutoReveal);
+
+        var updated = store.SetAutoReveal(owner.Room.RoomCode, guest.Participant.Token, true, Start.AddSeconds(2));
+        var ownerView = store.GetRoom(owner.Room.RoomCode, owner.Participant.Token, Start.AddSeconds(3));
+
+        Assert.True(updated.IsSuccess);
+        Assert.True(updated.Value!.AutoReveal);
+        Assert.True(ownerView.Value!.AutoReveal);
+    }
+
+    [Fact]
+    public void SelectCard_AutoRevealsWhenEnabledAndEveryoneVoted()
+    {
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Alice", Start).Value!;
+        var guest = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(1)).Value!;
+
+        store.SetAutoReveal(owner.Room.RoomCode, owner.Participant.Token, true, Start.AddSeconds(2));
+        store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, ScrumPokerCard.Five, Start.AddSeconds(3));
+
+        var afterSecondVote = store.SelectCard(owner.Room.RoomCode, guest.Participant.Token, ScrumPokerCard.Eight, Start.AddSeconds(4));
+
+        Assert.True(afterSecondVote.IsSuccess);
+        Assert.Equal(ScrumPokerPhase.Revealed, afterSecondVote.Value!.Phase);
     }
 
     [Fact]

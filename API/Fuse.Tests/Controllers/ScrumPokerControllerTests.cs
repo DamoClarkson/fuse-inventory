@@ -58,6 +58,26 @@ public sealed class ScrumPokerControllerTests
         Assert.True(hidden.Participants.Single(p => p.DisplayName == "Bob").HasVoted);
     }
 
+    [Fact]
+    public async Task AutoRevealSetting_IsSharedAcrossParticipants()
+    {
+        var inventoryStore = new InMemoryFuseStore();
+        await inventoryStore.UpdateAsync(snapshot => snapshot with
+        {
+            AppSettings = snapshot.AppSettings with { ScrumPokerEnabled = true }
+        });
+        var controller = CreateController(inventoryStore);
+
+        var owner = GetSession(await controller.CreateRoom(new ScrumPokerJoinRequest("Alice")));
+        var guest = GetSession(await controller.JoinRoom(owner.RoomCode, new ScrumPokerJoinRequest("Bob")));
+
+        var updated = GetRoom(await controller.SetAutoReveal(owner.RoomCode, new ScrumPokerAutoRevealRequest(guest.ParticipantToken, true)));
+        var ownerView = GetRoom(await controller.GetState(owner.RoomCode, owner.ParticipantToken));
+
+        Assert.True(updated.AutoReveal);
+        Assert.True(ownerView.AutoReveal);
+    }
+
     private static ScrumPokerController CreateController(InMemoryFuseStore inventoryStore) =>
         new(new InMemoryScrumPokerStore(), inventoryStore);
 

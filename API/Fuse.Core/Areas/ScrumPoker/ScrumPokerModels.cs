@@ -34,6 +34,7 @@ public sealed record ScrumPokerRoom(
     string RoomCode,
     int Round,
     ScrumPokerPhase Phase,
+    bool AutoReveal,
     long Revision,
     DateTime CreatedUtc,
     DateTime LastActivityUtc,
