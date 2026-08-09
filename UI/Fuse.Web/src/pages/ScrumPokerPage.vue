@@ -1,64 +1,59 @@
 <template>
-  <div class="page-container scrum-poker-page">
-    <div class="page-header">
-      <div>
-        <h1>Scrum Poker</h1>
-        <p class="subtitle">Estimate together without exposing votes before the reveal.</p>
+  <div :class="['scrum-poker-page', { 'scrum-poker-page--dark': isDark }]">
+    <header class="scrum-header">
+      <div class="brand-lockup">
+        <div>
+          <h1>Scrum poker</h1>
+        </div>
       </div>
-    </div>
+      <div v-if="session" class="room-pill">
+        <span class="room-pill__label">ROOM</span>
+        <strong>{{ session.roomCode }}</strong>
+        <q-btn flat round dense icon="content_copy" aria-label="Copy room code" @click="copyRoomCode">
+          <q-tooltip>Copy room code</q-tooltip>
+        </q-btn>
+      </div>
+    </header>
 
-    <q-banner v-if="!featureEnabled" rounded class="bg-grey-3 text-grey-9 q-mb-lg">
+    <q-banner v-if="!featureEnabled" rounded class="banner-muted q-mb-lg">
       Scrum Poker is currently disabled in Fuse Settings.
     </q-banner>
 
-    <q-card v-else-if="!session" class="content-card join-card">
-      <q-card-section>
-        <div class="text-h6">Create or join a room</div>
-        <div class="text-caption text-grey-6 q-mt-xs">Choose a display name, then share the room code with your team.</div>
+    <q-card v-else-if="!session" flat bordered class="join-card">
+      <q-card-section class="join-card__intro">
+        <div class="welcome-icon"><q-icon name="groups" size="30px" /></div>
+        <div>
+          <div class="section-kicker">Collaborative estimation</div>
+          <div class="join-title">Create or join a room</div>
+          <div class="join-copy">Choose a display name, then share the room with your team.</div>
+        </div>
       </q-card-section>
-      <q-card-section>
+      <q-card-section class="join-form">
         <q-input v-model="displayName" outlined label="Your display name" maxlength="50" counter @keyup.enter="roomCodeFromUrl ? enterRoom() : createRoom()" />
-        <q-banner v-if="roomCodeFromUrl" rounded dense class="bg-blue-1 text-primary q-mt-md">You’re entering room <strong>{{ roomCodeFromUrl }}</strong>.</q-banner>
-        <q-input v-else v-model="joinCode" outlined label="Room code (to join an existing room)" class="q-mt-md" maxlength="20" @keyup.enter="joinRoom" />
-        <q-banner v-if="errorMessage" rounded dense class="bg-red-1 text-negative q-mt-md">{{ errorMessage }}</q-banner>
+        <q-banner v-if="roomCodeFromUrl" rounded dense class="room-notice">You’re entering room <strong>{{ roomCodeFromUrl }}</strong>.</q-banner>
+        <q-input v-else v-model="joinCode" outlined label="Room code (optional)" class="q-mt-md" maxlength="20" @keyup.enter="joinRoom" />
+        <q-banner v-if="errorMessage" rounded dense class="banner-error q-mt-md">{{ errorMessage }}</q-banner>
       </q-card-section>
-      <q-card-actions align="right">
-        <q-btn v-if="roomCodeFromUrl" color="primary" label="Enter room" :disable="!canSubmit" :loading="loading" @click="enterRoom" />
+      <q-card-actions class="join-actions">
+        <q-btn v-if="roomCodeFromUrl" unelevated color="primary" label="Enter room" :disable="!canSubmit" :loading="loading" @click="enterRoom" />
         <template v-else>
-          <q-btn flat label="Join room" :disable="!canSubmit || !joinCode" :loading="loading" @click="joinRoom" />
-          <q-btn color="primary" label="Create room" :disable="!canSubmit" :loading="loading" @click="createRoom" />
+          <q-btn flat color="grey-8" label="Join existing room" :disable="!canSubmit || !joinCode" :loading="loading" @click="joinRoom" />
+          <q-btn unelevated color="primary" label="Create new room" :disable="!canSubmit" :loading="loading" @click="createRoom" />
         </template>
       </q-card-actions>
     </q-card>
 
     <template v-else>
-      <q-banner rounded class="room-banner q-mb-lg">
-        <div class="row items-center justify-between no-wrap">
-          <div>
-            <div class="text-caption">Room code</div>
-            <div class="text-h5 text-weight-bold letter-spaced">{{ session.roomCode }}</div>
-          </div>
-          <q-btn flat icon="content_copy" label="Copy code" @click="copyRoomCode" />
-        </div>
-      </q-banner>
+      <q-banner v-if="errorMessage" rounded dense class="banner-error q-mb-lg">{{ errorMessage }}</q-banner>
 
-      <q-banner v-if="errorMessage" rounded dense class="bg-red-1 text-negative q-mb-lg">{{ errorMessage }}</q-banner>
-
-      <div class="row q-col-gutter-lg">
-        <div class="col-12 col-md-7">
-          <q-card class="content-card">
-            <q-card-section class="row items-center justify-between">
-              <div>
-                <div class="text-h6">Round {{ room?.round ?? 1 }}</div>
-                <div class="text-caption text-grey-6">{{ room?.phase === ScrumPokerPhase.Revealed ? 'Cards revealed' : 'Voting in progress' }}</div>
-              </div>
-              <div class="row items-center q-gutter-md">
-                <div v-if="room?.phase === ScrumPokerPhase.Revealed && room.average !== undefined && room.average !== null" class="text-subtitle1 text-weight-medium">Average: {{ room.average }}</div>
-                <q-badge :color="room?.phase === ScrumPokerPhase.Revealed ? 'positive' : 'primary'" :label="room?.phase ?? 'Voting'" />
-              </div>
-            </q-card-section>
-            <q-separator />
+      <div class="scrum-layout">
+        <main class="voting-panel">
+          <q-card flat bordered class="cards-card">
             <q-card-section>
+              <div class="round-heading">
+                <h2>Vote when ready</h2>
+                <q-chip dense :color="room?.phase === ScrumPokerPhase.Revealed ? 'positive' : 'primary'" text-color="white" :icon="room?.phase === ScrumPokerPhase.Revealed ? 'check' : 'schedule'" :label="room?.phase === ScrumPokerPhase.Revealed ? 'Revealed' : 'Voting'" />
+              </div>
               <div class="card-grid">
                 <q-btn
                   v-for="card in cards"
@@ -71,33 +66,82 @@
                 />
               </div>
             </q-card-section>
-            <q-card-actions align="right">
-              <q-btn flat label="Reset round" icon="restart_alt" :loading="actionLoading" @click="resetRound" />
-              <q-btn color="primary" :label="room?.phase === ScrumPokerPhase.Revealed ? 'Hide cards' : 'Reveal cards'" :icon="room?.phase === ScrumPokerPhase.Revealed ? 'visibility_off' : 'visibility'" :loading="actionLoading" @click="room?.phase === ScrumPokerPhase.Revealed ? hideCards() : revealCards()" />
+            <q-card-actions class="voting-actions">
+              <div class="round-indicator">Round {{ room?.round ?? 1 }}</div>
+              <div class="vote-help">{{ readyCount }} of {{ room?.participants?.length ?? 0 }} voted</div>
             </q-card-actions>
           </q-card>
-        </div>
 
-        <div class="col-12 col-md-5">
-          <q-card class="content-card">
+          <section class="participants-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>Participants <span class="participant-total">{{ room?.participants?.length ?? 0 }} in room</span></h3>
+              </div>
+              <div class="action-row">
+                <q-btn flat class="control-btn" label="Reset" icon="restart_alt" :loading="actionLoading" @click="resetRound" />
+                <q-btn unelevated color="primary" :label="room?.phase === ScrumPokerPhase.Revealed ? 'Hide' : 'Reveal'" :icon="room?.phase === ScrumPokerPhase.Revealed ? 'visibility_off' : 'visibility'" :loading="actionLoading" @click="room?.phase === ScrumPokerPhase.Revealed ? hideCards() : revealCards()" />
+              </div>
+            </div>
+            <q-list class="participant-list">
+                <q-item v-for="participant in room?.participants ?? []" :key="participant.id">
+                  <q-item-section avatar><q-avatar class="participant-avatar">{{ participant.displayName?.charAt(0).toUpperCase() }}</q-avatar></q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ participant.displayName }}<q-badge v-if="participant.id === currentParticipantId" outline color="primary" label="You" class="q-ml-sm" /></q-item-label>
+                    <q-item-label caption><span class="status-dot" :class="{ 'status-dot--ready': participant.hasVoted }"></span>{{ participant.hasVoted ? 'Ready' : 'Still thinking' }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <span v-if="participant.card !== undefined && participant.card !== null" class="participant-card">{{ cardLabel(participant.card) }}</span>
+                    <q-icon v-else-if="participant.hasVoted" name="check" color="positive" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            <div class="participant-summary">
+              <div>
+                <div class="summary-label">Average</div>
+                <div class="summary-value">{{ averageDisplay }}</div>
+              </div>
+              <div>
+                <div class="summary-label">Spread</div>
+                <div class="summary-value">{{ spreadDisplay }}</div>
+              </div>
+            </div>
+          </section>
+
+        </main>
+
+        <aside class="details-column">
+          <q-card flat bordered class="side-card">
             <q-card-section>
-              <div class="text-h6">Participants</div>
-              <div class="text-caption text-grey-6">{{ room?.participants?.length ?? 0 }} in this room</div>
+              <div class="side-card-header">
+                <div class="side-title">Room</div>
+                <q-btn flat round dense icon="edit" size="sm" class="room-edit-btn" aria-label="Room settings" />
+              </div>
+              <div class="side-room-name">Sprint {{ room?.round ?? 1 }} planning</div>
+              <div class="side-room-code">Code: {{ session?.roomCode }}</div>
+              <q-btn outline class="full-width q-mt-md" icon="link" label="Copy invite link" @click="copyInviteLink" />
             </q-card-section>
-            <q-separator />
-            <q-list separator>
-              <q-item v-for="participant in room?.participants ?? []" :key="participant.id">
-                <q-item-section avatar><q-avatar color="primary" text-color="white">{{ participant.displayName?.charAt(0).toUpperCase() }}</q-avatar></q-item-section>
-                <q-item-section>
-                  <q-item-label>{{ participant.displayName }}<q-badge v-if="participant.id === currentParticipantId" outline color="primary" label="You" class="q-ml-sm" /></q-item-label>
-                  <q-item-label caption>{{ participant.hasVoted ? 'Card selected' : 'Waiting for a card' }}</q-item-label>
-                </q-item-section>
-                <q-item-section side><span v-if="participant.card !== undefined && participant.card !== null" class="text-h6">{{ cardLabel(participant.card) }}</span><q-icon v-else-if="participant.hasVoted" name="lock" color="grey-6" /></q-item-section>
-              </q-item>
-            </q-list>
           </q-card>
-          <q-btn flat color="grey-7" label="Leave room" class="q-mt-md" @click="leaveRoom" />
-        </div>
+
+          <q-card flat bordered class="side-card">
+            <q-card-section>
+              <div class="side-title">Settings</div>
+              <div class="settings-row">
+                <div class="settings-label">Auto-reveal when everyone's voted</div>
+                <q-toggle :model-value="autoReveal" dense :disable="autoRevealSaving" @update:model-value="onAutoRevealChange" />
+              </div>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered class="side-card">
+            <q-card-section>
+              <div class="side-title">Deck legend</div>
+              <div class="legend-row"><strong>?</strong><span>Not enough info to estimate</span></div>
+              <div class="legend-row"><strong>☕</strong><span>Suggest a break</span></div>
+            </q-card-section>
+          </q-card>
+
+          <q-btn flat class="leave-room-btn" icon="logout" label="Leave room" @click="leaveRoom" />
+        </aside>
       </div>
     </template>
   </div>
@@ -106,7 +150,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { Notify, useQuasar } from 'quasar'
 import { ScrumPokerCard, ScrumPokerPhase, ScrumPokerRoomResponse, ScrumPokerSessionResponse } from 'api/client'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
@@ -115,6 +159,7 @@ const route = useRoute()
 const router = useRouter()
 const fuseStore = useFuseStore()
 const client = useFuseClient()
+const $q = useQuasar()
 const displayName = ref('')
 const joinCode = ref('')
 const session = ref<ScrumPokerSessionResponse | null>(null)
@@ -122,14 +167,33 @@ const room = ref<ScrumPokerRoomResponse | null>(null)
 const participantName = ref('')
 const loading = ref(false)
 const actionLoading = ref(false)
+const autoReveal = ref(false)
+const autoRevealSaving = ref(false)
 const errorMessage = ref('')
 const selectedCard = ref<ScrumPokerCard | null>(null)
 let pollTimer: ReturnType<typeof setInterval> | undefined
 
 const featureEnabled = computed(() => fuseStore.appSettings?.scrumPokerEnabled === true)
+const isDark = computed(() => $q.dark.isActive)
 const roomCodeFromUrl = computed(() => typeof route.params.roomCode === 'string' ? route.params.roomCode.toUpperCase() : '')
 const canSubmit = computed(() => displayName.value.trim().length > 0 && displayName.value.trim().length <= 50)
 const currentParticipantId = computed(() => room.value?.participants?.find(p => p.displayName === participantName.value)?.id)
+const roomAutoReveal = computed(() => room.value?.autoReveal === true)
+const readyCount = computed(() => (room.value?.participants ?? []).filter(p => p.hasVoted).length)
+const numericRevealedCards = computed(() =>
+  (room.value?.participants ?? [])
+    .map(p => p.card)
+    .filter((card): card is ScrumPokerCard => card !== null && card !== undefined)
+    .map(card => cardValue(card))
+    .filter((value): value is number => value !== null)
+)
+const averageDisplay = computed(() => room.value?.phase === ScrumPokerPhase.Revealed && room.value.average !== undefined && room.value.average !== null ? room.value.average.toString() : '—')
+const spreadDisplay = computed(() => {
+  if (room.value?.phase !== ScrumPokerPhase.Revealed || numericRevealedCards.value.length === 0) return '—'
+  const min = Math.min(...numericRevealedCards.value)
+  const max = Math.max(...numericRevealedCards.value)
+  return min === max ? '0' : `${min}-${max}`
+})
 const cards = [
   { value: ScrumPokerCard.Zero, label: '0' }, { value: ScrumPokerCard.Half, label: '½' }, { value: ScrumPokerCard.One, label: '1' },
   { value: ScrumPokerCard.Two, label: '2' }, { value: ScrumPokerCard.Three, label: '3' }, { value: ScrumPokerCard.Five, label: '5' },
@@ -139,6 +203,20 @@ const cards = [
 ]
 
 function cardLabel(card: ScrumPokerCard) { return cards.find(option => option.value === card)?.label ?? card }
+function cardValue(card: ScrumPokerCard): number | null {
+  if (card === ScrumPokerCard.Zero) return 0
+  if (card === ScrumPokerCard.Half) return 0.5
+  if (card === ScrumPokerCard.One) return 1
+  if (card === ScrumPokerCard.Two) return 2
+  if (card === ScrumPokerCard.Three) return 3
+  if (card === ScrumPokerCard.Five) return 5
+  if (card === ScrumPokerCard.Eight) return 8
+  if (card === ScrumPokerCard.Thirteen) return 13
+  if (card === ScrumPokerCard.Twenty) return 20
+  if (card === ScrumPokerCard.Forty) return 40
+  if (card === ScrumPokerCard.Hundred) return 100
+  return null
+}
 function storageKey(code: string) { return `fuse:scrum-poker:${code}` }
 
 async function createRoom() {
@@ -203,6 +281,62 @@ async function hideCards() { await roomAction(() => client.scrumPokerHide(sessio
 async function resetRound() { await roomAction(() => client.scrumPokerReset(session.value!.roomCode!, { participantToken: session.value!.participantToken } as any)) ; selectedCard.value = null }
 async function roomAction(action: () => Promise<ScrumPokerRoomResponse>) { actionLoading.value = true; errorMessage.value = ''; try { room.value = await action() } catch (error) { errorMessage.value = error instanceof Error ? error.message : 'Unable to update the room.' } finally { actionLoading.value = false } }
 async function copyRoomCode() { if (session.value?.roomCode) { await navigator.clipboard?.writeText(session.value.roomCode); Notify.create({ message: 'Room code copied', color: 'positive' }) } }
+async function copyInviteLink() {
+  if (!session.value?.roomCode) return
+  const inviteUrl = `${window.location.origin}/scrum-poker/${session.value.roomCode}`
+  await navigator.clipboard?.writeText(inviteUrl)
+  Notify.create({ message: 'Invite link copied', color: 'positive' })
+}
+
+async function updateAutoReveal(enabled: boolean) {
+  if (!session.value?.roomCode || !session.value.participantToken || autoRevealSaving.value)
+    return
+
+  if (enabled === roomAutoReveal.value)
+    return
+
+  autoRevealSaving.value = true
+  errorMessage.value = ''
+  try {
+    room.value = await setAutoRevealOnServer(session.value.roomCode, session.value.participantToken, enabled)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update auto-reveal setting.'
+    errorMessage.value = message
+    Notify.create({ type: 'negative', message })
+  } finally {
+    autoRevealSaving.value = false
+  }
+}
+
+function onAutoRevealChange(enabled: boolean) {
+  void updateAutoReveal(enabled)
+}
+
+async function setAutoRevealOnServer(roomCode: string, participantToken: string, enabled: boolean): Promise<ScrumPokerRoomResponse> {
+  const response = await fetch(`/api/scrum-poker/rooms/${encodeURIComponent(roomCode)}/settings/auto-reveal`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ participantToken, enabled })
+  })
+
+  if (!response.ok) {
+    let message = 'Unable to update auto-reveal setting.'
+    try {
+      const payload = await response.json()
+      if (payload?.error) message = payload.error
+    } catch {
+      // Keep the generic message when the error payload is not JSON.
+    }
+
+    throw new Error(message)
+  }
+
+  const payload = await response.json()
+  return ScrumPokerRoomResponse.fromJS(payload)
+}
+
 async function leaveRoom() {
   const currentSession = session.value
   stopPolling()
@@ -233,15 +367,455 @@ async function loadStoredSession() {
 }
 onMounted(async () => { await fuseStore.fetchStatus(); await loadStoredSession() })
 watch(() => route.params.roomCode, () => { if (!session.value) void loadStoredSession() })
+watch(roomAutoReveal, (enabled) => {
+  autoReveal.value = enabled
+}, { immediate: true })
 onBeforeUnmount(stopPolling)
 </script>
 
 <style scoped>
 @import '../styles/pages.css';
-.join-card { max-width: 620px; }
-.room-banner { background: linear-gradient(135deg, var(--q-primary), #6a4bbc); color: white; }
-.letter-spaced { letter-spacing: .18em; }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: .75rem; }
-.poker-card { min-height: 86px; border: 1px solid rgba(80, 60, 150, .25); font-size: 1.2rem; }
-.poker-card--selected { background: var(--q-primary); color: white; transform: translateY(-3px); }
+.scrum-poker-page {
+  --sp-page-bg: var(--fuse-page-bg);
+  --sp-surface: var(--fuse-card-bg);
+  --sp-text: inherit;
+  --sp-muted: var(--fuse-text-muted);
+  --sp-border: var(--fuse-panel-border);
+  --sp-soft: var(--fuse-panel-bg);
+  --sp-strong: var(--q-primary);
+  --sp-strong-soft: color-mix(in srgb, var(--q-primary) 16%, var(--sp-surface));
+  --sp-shadow: var(--fuse-shadow-1);
+
+  min-height: 100%;
+  padding: 1.7rem clamp(0.8rem, 3vw, 2.2rem);
+  background: var(--sp-page-bg);
+  color: var(--sp-text);
+}
+
+.scrum-poker-page--dark {
+  --sp-page-bg: var(--fuse-page-bg);
+  --sp-surface: var(--fuse-card-bg);
+  --sp-text: inherit;
+  --sp-muted: var(--fuse-text-muted);
+  --sp-border: var(--fuse-panel-border);
+  --sp-soft: var(--fuse-panel-bg);
+  --sp-strong: var(--q-primary);
+  --sp-strong-soft: color-mix(in srgb, var(--q-primary) 22%, var(--sp-surface));
+  --sp-shadow: var(--fuse-shadow-1);
+}
+
+.scrum-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  max-width: 1260px;
+  margin: 0 auto 1.1rem;
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.scrum-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.section-kicker {
+  color: var(--sp-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.room-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.25rem 0.35rem 0.25rem 0.8rem;
+  border: 1px solid var(--sp-border);
+  border-radius: 999px;
+  background: var(--sp-surface);
+  color: var(--sp-text);
+  font-size: 0.9rem;
+  box-shadow: var(--sp-shadow);
+}
+
+.room-pill__label {
+  color: var(--sp-muted);
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.join-card {
+  width: min(100%, 620px);
+  margin: 2.5rem auto;
+  border-color: var(--sp-border);
+  border-radius: 18px;
+  box-shadow: var(--sp-shadow);
+  background: var(--sp-surface);
+}
+
+.join-card__intro {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 2rem 1rem;
+}
+
+.welcome-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--sp-strong);
+  box-shadow: 0 8px 18px rgba(33, 93, 175, 0.26);
+}
+
+.join-title {
+  margin-top: 0.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.join-copy {
+  margin-top: 0.3rem;
+  color: var(--sp-muted);
+  font-size: 0.9rem;
+}
+
+.join-form {
+  padding: 1rem 2rem 1.5rem;
+}
+
+.join-actions {
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0 2rem 1.75rem;
+}
+
+.room-notice {
+  background: var(--sp-strong-soft);
+  color: var(--sp-strong);
+}
+
+.banner-muted {
+  background: var(--sp-soft);
+  color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+}
+
+.banner-error {
+  background: color-mix(in srgb, #e53935 12%, var(--sp-surface));
+  color: #d02626;
+  border: 1px solid color-mix(in srgb, #e53935 45%, var(--sp-border));
+}
+
+.scrum-poker-page--dark .banner-error {
+  color: #ff8f8f;
+}
+
+.scrum-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 1.1rem;
+  max-width: 1260px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.details-column {
+  display: grid;
+  gap: 0.72rem;
+  align-content: start;
+}
+
+.voting-panel {
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.round-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.round-heading h2,
+.panel-heading h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.participant-total {
+  color: var(--sp-muted);
+  font-size: 0.86rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.cards-card,
+.participants-panel,
+.side-card {
+  border: 1px solid var(--sp-border);
+  border-radius: 12px;
+  background: var(--sp-surface);
+  box-shadow: var(--sp-shadow);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.poker-card {
+  min-height: 64px;
+  border: 1px solid var(--sp-border);
+  border-radius: 10px;
+  color: var(--sp-text);
+  background: var(--sp-surface);
+  font-size: 1.06rem;
+  font-weight: 600;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.poker-card:hover {
+  border-color: #80afe9;
+  box-shadow: 0 5px 12px rgba(48, 107, 190, 0.15);
+  transform: translateY(-1px);
+}
+
+.poker-card--selected {
+  border-color: var(--sp-strong);
+  background: var(--sp-strong);
+  color: #fff;
+  box-shadow: 0 7px 15px rgba(29, 85, 167, 0.28);
+}
+
+.voting-actions {
+  justify-content: space-between;
+  padding: 0.85rem 1.05rem 0.9rem;
+  border-top: 1px solid var(--sp-border);
+  color: var(--sp-muted);
+  font-size: 0.86rem;
+}
+
+.round-indicator {
+  color: var(--sp-text);
+  font-weight: 600;
+}
+
+.participants-panel {
+  padding: 0.65rem 0.95rem 0.85rem;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.2rem 0.1rem 0.65rem;
+}
+
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.control-btn {
+  border: 1px solid var(--sp-border);
+}
+
+.participant-list {
+  border-top: 1px solid var(--sp-border);
+}
+
+.participant-list .q-item {
+  min-height: 56px;
+  padding: 0.35rem 0.15rem;
+}
+
+.participant-avatar {
+  background: var(--sp-strong-soft);
+  color: var(--sp-strong);
+  font-weight: 700;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 0.35rem 0.1rem 0;
+  border-radius: 50%;
+  background: #c2c9d6;
+}
+
+.status-dot--ready {
+  background: #36b37e;
+}
+
+.participant-card {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--sp-strong-soft);
+  color: var(--sp-strong);
+  font-weight: 700;
+}
+
+.participant-summary {
+  border-top: 1px solid var(--sp-border);
+  margin-top: 0.2rem;
+  padding: 0.55rem 0.25rem 0.1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-label {
+  color: var(--sp-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.summary-value {
+  margin-top: 0.16rem;
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.side-card {
+  border-radius: 12px;
+}
+
+.side-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.room-edit-btn {
+  color: var(--sp-muted);
+}
+
+.side-title {
+  color: var(--sp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.side-room-name {
+  margin-top: 0.4rem;
+  font-weight: 700;
+  color: var(--sp-text);
+}
+
+.side-room-code {
+  margin-top: 0.15rem;
+  color: var(--sp-muted);
+  font-size: 0.83rem;
+}
+
+.settings-row {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.settings-label {
+  color: var(--sp-text);
+  line-height: 1.25;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--sp-muted);
+  margin-top: 0.55rem;
+  font-size: 0.86rem;
+}
+
+.legend-row strong {
+  color: var(--sp-text);
+  width: 16px;
+}
+
+.leave-room-btn {
+  border: 1px solid var(--sp-border);
+  background: var(--sp-surface);
+}
+
+@media (max-width: 1150px) {
+  .scrum-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .card-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .scrum-poker-page {
+    padding: 1rem 0.7rem;
+  }
+
+  .scrum-header {
+    margin-bottom: 0.85rem;
+  }
+
+  .room-pill__label {
+    display: none;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.45rem;
+  }
+
+  .poker-card {
+    min-height: 54px;
+  }
+
+  .join-card__intro,
+  .join-form {
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
+  }
+
+  .join-actions {
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
+    flex-wrap: wrap;
+  }
+}
 </style>

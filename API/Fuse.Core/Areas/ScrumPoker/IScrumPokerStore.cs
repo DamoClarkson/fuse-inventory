@@ -9,6 +9,7 @@ public interface IScrumPokerStore
     Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow);
     Result<ScrumPokerRoom> GetRoom(string roomCode, string participantToken, DateTime utcNow);
     Result<ScrumPokerRoom> SelectCard(string roomCode, string participantToken, ScrumPokerCard? card, DateTime utcNow);
+    Result<ScrumPokerRoom> SetAutoReveal(string roomCode, string participantToken, bool enabled, DateTime utcNow);
     Result<ScrumPokerRoom> Reveal(string roomCode, string participantToken, DateTime utcNow);
     Result<ScrumPokerRoom> Hide(string roomCode, string participantToken, DateTime utcNow);
     Result<ScrumPokerRoom> Reset(string roomCode, string participantToken, DateTime utcNow);
