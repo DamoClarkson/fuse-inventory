@@ -2,13 +2,17 @@
   <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
-        <q-toolbar-title>
-          Fuse Inventory
-        </q-toolbar-title>
+        <q-btn
+          dense
+          flat
+          round
+          icon="menu"
+          @click="leftDrawerOpen = !leftDrawerOpen"
+        />
+        <q-toolbar-title> Fuse Inventory </q-toolbar-title>
 
         <q-spacer />
-        
+
         <InventoryNavigator
           v-if="showInventoryNavigator"
           :kind="navigatorKind"
@@ -19,11 +23,24 @@
           class="q-mr-md"
         />
 
-        <q-btn dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleTheme" />
+        <q-btn
+          dense
+          flat
+          round
+          :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+          @click="toggleTheme"
+        />
 
         <LicenseChip />
 
-        <q-btn dense flat round icon="info_outline" aria-label="About Fuse Inventory" @click="openAboutDialog">
+        <q-btn
+          dense
+          flat
+          round
+          icon="info_outline"
+          aria-label="About Fuse Inventory"
+          @click="openAboutDialog"
+        >
           <q-tooltip>About Fuse Inventory</q-tooltip>
         </q-btn>
 
@@ -36,7 +53,9 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>Getting started</q-item-label>
-                  <q-item-label caption>Build your first application inventory</q-item-label>
+                  <q-item-label caption
+                    >Build your first application inventory</q-item-label
+                  >
                 </q-item-section>
               </q-item>
               <q-item clickable @click="handleOpenCheatSheet">
@@ -45,7 +64,9 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>Guides</q-item-label>
-                  <q-item-label caption>Choose a task to work through</q-item-label>
+                  <q-item-label caption
+                    >Choose a task to work through</q-item-label
+                  >
                 </q-item-section>
               </q-item>
               <q-separator />
@@ -55,145 +76,218 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>Reset onboarding</q-item-label>
-                  <q-item-label caption>Clear progress and start over</q-item-label>
+                  <q-item-label caption
+                    >Clear progress and start over</q-item-label
+                  >
                 </q-item-section>
               </q-item>
             </q-list>
           </q-menu>
         </q-btn>
 
-        <q-btn data-testid="auth-button" dense flat round :icon="fuseStore.isLoggedIn ? 'lock' : 'lock_open'" @click="handleAuthClick">
-          <q-tooltip>{{ fuseStore.isLoggedIn ? `Logged in as ${fuseStore.userName}` : 'Login' }}</q-tooltip>
+        <q-btn
+          data-testid="auth-button"
+          dense
+          flat
+          round
+          :icon="fuseStore.isLoggedIn ? 'lock' : 'lock_open'"
+          @click="handleAuthClick"
+        >
+          <q-tooltip>{{
+            fuseStore.isLoggedIn
+              ? `Logged in as ${fuseStore.userName}`
+              : "Login"
+          }}</q-tooltip>
         </q-btn>
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above :width="250" :breakpoint="500" bordered class="app-nav">
+    <q-drawer
+      v-model="leftDrawerOpen"
+      show-if-above
+      :width="250"
+      :breakpoint="500"
+      bordered
+      class="app-nav"
+    >
       <q-scroll-area class="fit">
         <q-list padding class="nav-list">
-          <q-item clickable v-ripple :to="{ name: 'home' }" exact-active-class="bg-primary text-white"
-            data-tour-id="nav-home" class="nav-home">
+          <q-item
+            clickable
+            v-ripple
+            :to="{ name: 'home' }"
+            exact-active-class="bg-primary text-white"
+            data-tour-id="nav-home"
+            class="nav-home"
+          >
             <q-item-section avatar>
               <q-icon name="home" />
             </q-item-section>
-            <q-item-section>
-              Home
-            </q-item-section>
+            <q-item-section> Home </q-item-section>
           </q-item>
 
           <q-separator class="q-my-md" />
 
-          <q-expansion-item label="Inventory" icon="inventory_2" dense expand-separator class="nav-group nav-group--inventory">
-            <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="bg-primary text-white"
+          <q-expansion-item
+            label="Inventory"
+            icon="inventory_2"
+            dense
+            expand-separator
+            class="nav-group nav-group--inventory"
+          >
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'applications' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.ApplicationsRead)"
-              data-tour-id="nav-applications">
+              data-tour-id="nav-applications"
+            >
               <q-item-section avatar>
                 <q-icon name="apps" />
               </q-item-section>
-              <q-item-section>
-                Applications
-              </q-item-section>
+              <q-item-section> Applications </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'accounts' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'accounts' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.AccountsRead)"
-              data-tour-id="nav-accounts">
+              data-tour-id="nav-accounts"
+            >
               <q-item-section avatar>
                 <q-icon name="vpn_key" />
               </q-item-section>
-              <q-item-section>
-                Accounts
-              </q-item-section>
+              <q-item-section> Accounts </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'identities' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'identities' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.IdentitiesRead)"
-              data-tour-id="nav-identities">
+              data-tour-id="nav-identities"
+            >
               <q-item-section avatar>
                 <q-icon name="badge" />
               </q-item-section>
-              <q-item-section>
-                Identities
-              </q-item-section>
+              <q-item-section> Identities </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'dataStores' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'dataStores' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.DataStoresRead)"
-              data-tour-id="nav-data-stores">
+              data-tour-id="nav-data-stores"
+            >
               <q-item-section avatar>
                 <q-icon name="storage" />
               </q-item-section>
-              <q-item-section>
-                Data Stores
-              </q-item-section>
+              <q-item-section> Data Stores </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'platforms' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'platforms' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.PlatformsRead)"
-              data-tour-id="nav-platforms">
+              data-tour-id="nav-platforms"
+            >
               <q-item-section avatar>
                 <q-icon name="dns" />
               </q-item-section>
-              <q-item-section>
-                Platforms
-              </q-item-section>
+              <q-item-section> Platforms </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'environments' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'environments' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.EnvironmentsRead)"
-              data-tour-id="nav-environments">
+              data-tour-id="nav-environments"
+            >
               <q-item-section avatar>
                 <q-icon name="cloud" />
               </q-item-section>
-              <q-item-section>
-                Environments
-              </q-item-section>
+              <q-item-section> Environments </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'externalResources' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'externalResources' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.ExternalResourcesRead)"
-              data-tour-id="nav-external-resources">
+              data-tour-id="nav-external-resources"
+            >
               <q-item-section avatar>
                 <q-icon name="link" />
               </q-item-section>
-              <q-item-section>
-                External Resources
-              </q-item-section>
+              <q-item-section> External Resources </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'messageBrokers' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'messageBrokers' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.MessageBrokersRead)"
-              data-tour-id="nav-message-brokers">
+              data-tour-id="nav-message-brokers"
+            >
               <q-item-section avatar>
                 <q-icon name="swap_horiz" />
               </q-item-section>
-              <q-item-section>
-                Message Brokers
-              </q-item-section>
+              <q-item-section> Message Brokers </q-item-section>
             </q-item>
           </q-expansion-item>
 
-          <q-expansion-item label="Classification" icon="category" dense expand-separator class="nav-group nav-group--classification">
-            <q-item clickable v-ripple :to="{ name: 'tags' }" active-class="bg-primary text-white"
-              data-tour-id="nav-tags">
+          <q-expansion-item
+            label="Classification"
+            icon="category"
+            dense
+            expand-separator
+            class="nav-group nav-group--classification"
+          >
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'tags' }"
+              active-class="bg-primary text-white"
+              data-tour-id="nav-tags"
+            >
               <q-item-section avatar>
                 <q-icon name="label" />
               </q-item-section>
-              <q-item-section>
-                Tags
-              </q-item-section>
+              <q-item-section> Tags </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'positions' }" active-class="bg-primary text-white"
-              v-if="fuseStore.hasPermission(Permission.PositionsRead)">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'positions' }"
+              active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.PositionsRead)"
+            >
               <q-item-section avatar>
                 <q-icon name="people" />
               </q-item-section>
               <q-item-section>Positions</q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'responsibilityTypes' }" active-class="bg-primary text-white"
-              v-if="fuseStore.hasPermission(Permission.ResponsibilitiesRead)">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'responsibilityTypes' }"
+              active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.ResponsibilitiesRead)"
+            >
               <q-item-section avatar>
                 <q-icon name="assignment_ind" />
               </q-item-section>
@@ -201,183 +295,268 @@
             </q-item>
           </q-expansion-item>
 
-          <q-expansion-item label="Insights" icon="insights" dense expand-separator class="nav-group nav-group--insights">
-            <q-item clickable v-ripple :to="{ name: 'healthOverview' }" active-class="bg-primary text-white"
-              v-if="healthMonitoringEnabled && fuseStore.hasPermission(Permission.ApplicationsRead)">
-              <q-item-section avatar><q-icon name="monitor_heart" /></q-item-section>
+          <q-expansion-item
+            label="Insights"
+            icon="insights"
+            dense
+            expand-separator
+            class="nav-group nav-group--insights"
+          >
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'healthOverview' }"
+              active-class="bg-primary text-white"
+              v-if="
+                healthMonitoringEnabled &&
+                fuseStore.hasPermission(Permission.ApplicationsRead)
+              "
+            >
+              <q-item-section avatar
+                ><q-icon name="monitor_heart"
+              /></q-item-section>
               <q-item-section>Service Health</q-item-section>
             </q-item>
-            <q-item clickable v-ripple :to="{ name: 'risks' }" active-class="bg-primary text-white"
-              v-if="fuseStore.hasPermission(Permission.RisksRead)">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'risks' }"
+              active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.RisksRead)"
+            >
               <q-item-section avatar>
                 <q-icon name="warning" />
               </q-item-section>
-              <q-item-section>
-                Risks
-              </q-item-section>
+              <q-item-section> Risks </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'activities' }" active-class="bg-primary text-white"
-              v-if="fuseStore.hasPermission(Permission.ActivityRead)">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'activities' }"
+              active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.ActivityRead)"
+            >
               <q-item-section avatar>
                 <q-icon name="timeline" />
               </q-item-section>
-              <q-item-section>
-                Activities
-              </q-item-section>
+              <q-item-section> Activities </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'documentationCompleteness' }" active-class="bg-primary text-white"
-              v-if="fuseStore.hasPermission(Permission.ApplicationsRead) && isIncompleteDataWarningEnabled">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'documentationCompleteness' }"
+              active-class="bg-primary text-white"
+              v-if="
+                fuseStore.hasPermission(Permission.ApplicationsRead) &&
+                isIncompleteDataWarningEnabled
+              "
+            >
               <q-item-section avatar>
                 <q-icon name="fact_check" />
               </q-item-section>
-              <q-item-section>
-                Documentation Gaps
-              </q-item-section>
+              <q-item-section> Documentation Gaps </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'viewHome' }" active-class="bg-primary text-white"
-              data-tour-id="nav-view">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'viewHome' }"
+              active-class="bg-primary text-white"
+              data-tour-id="nav-view"
+            >
               <q-item-section avatar>
                 <q-icon name="menu_book" />
               </q-item-section>
-              <q-item-section>
-                Documentation Mode
-              </q-item-section>
+              <q-item-section> Documentation Mode </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'graph' }" active-class="bg-primary text-white"
-              data-tour-id="nav-tags">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'graph' }"
+              active-class="bg-primary text-white"
+              data-tour-id="nav-tags"
+            >
               <q-item-section avatar>
                 <q-icon name="insights" />
               </q-item-section>
-              <q-item-section>
-                Graph
-              </q-item-section>
+              <q-item-section> Graph </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'blastRadius' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'blastRadius' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.ApplicationsRead)"
-              data-tour-id="nav-blast-radius">
+              data-tour-id="nav-blast-radius"
+            >
               <q-item-section avatar>
                 <q-icon name="crisis_alert" />
               </q-item-section>
-              <q-item-section>
-                Blast Radius
-              </q-item-section>
+              <q-item-section> Blast Radius </q-item-section>
             </q-item>
           </q-expansion-item>
 
-          <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator class="nav-group nav-group--integrations">
-            <q-item v-if="fuseStore.appSettings?.scrumPokerEnabled" clickable v-ripple :to="{ name: 'scrumPoker' }" active-class="bg-primary text-white">
+          <q-expansion-item
+            label="Integrations"
+            icon="cloud_sync"
+            dense
+            expand-separator
+            class="nav-group nav-group--integrations"
+          >
+            <q-item
+              v-if="fuseStore.appSettings?.scrumPokerEnabled"
+              clickable
+              v-ripple
+              :to="{ name: 'scrumPoker' }"
+              active-class="bg-primary text-white"
+            >
               <q-item-section avatar><q-icon name="style" /></q-item-section>
               <q-item-section>Scrum Poker</q-item-section>
             </q-item>
-            <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'kumaIntegrations' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.canRead"
-              data-tour-id="nav-kuma-integrations">
+              data-tour-id="nav-kuma-integrations"
+            >
               <q-item-section avatar>
                 <q-icon name="cloud_sync" />
               </q-item-section>
-              <q-item-section>
-                Kuma Integrations
-              </q-item-section>
+              <q-item-section> Kuma Integrations </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'secretProviders' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'secretProviders' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.canRead"
-              data-tour-id="nav-secret-providers">
+              data-tour-id="nav-secret-providers"
+            >
               <q-item-section avatar>
                 <q-icon name="cloud" />
               </q-item-section>
-              <q-item-section>
-                Azure Config & Key Vault
-              </q-item-section>
+              <q-item-section> Azure Config & Key Vault </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'sqlIntegrations' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'sqlIntegrations' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.canRead"
-              data-tour-id="nav-sql-integrations">
+              data-tour-id="nav-sql-integrations"
+            >
               <q-item-section avatar>
                 <q-icon name="storage" />
               </q-item-section>
-              <q-item-section>
-                SQL Integrations
-              </q-item-section>
+              <q-item-section> SQL Integrations </q-item-section>
             </q-item>
           </q-expansion-item>
 
-          <q-expansion-item label="Administration" icon="settings" dense expand-separator class="nav-group nav-group--administration">
-            <q-item clickable v-ripple :to="{ name: 'appSettings' }" active-class="bg-primary text-white"
-              data-tour-id="nav-app-settings">
+          <q-expansion-item
+            label="Administration"
+            icon="settings"
+            dense
+            expand-separator
+            class="nav-group nav-group--administration"
+          >
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'appSettings' }"
+              active-class="bg-primary text-white"
+              data-tour-id="nav-app-settings"
+            >
               <q-item-section avatar>
                 <q-icon name="settings" />
               </q-item-section>
-              <q-item-section>
-                Settings
-              </q-item-section>
+              <q-item-section> Settings </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'config' }" active-class="bg-primary text-white"
-              data-tour-id="nav-config">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'config' }"
+              active-class="bg-primary text-white"
+              data-tour-id="nav-config"
+            >
               <q-item-section avatar>
                 <q-icon name="notes" />
               </q-item-section>
-              <q-item-section>
-                Config Export
-              </q-item-section>
+              <q-item-section> Config Export </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'passwordGenerator' }" active-class="bg-primary text-white">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'passwordGenerator' }"
+              active-class="bg-primary text-white"
+            >
               <q-item-section avatar>
                 <q-icon name="password" />
               </q-item-section>
-              <q-item-section>
-                Password Generator
-              </q-item-section>
+              <q-item-section> Password Generator </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
-              data-tour-id="nav-security">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'security' }"
+              active-class="bg-primary text-white"
+              data-tour-id="nav-security"
+            >
               <q-item-section avatar>
                 <q-icon name="security" />
               </q-item-section>
-              <q-item-section>
-                Security
-              </q-item-section>
+              <q-item-section> Security </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'roles' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'roles' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.RolesRead)"
-              data-tour-id="nav-roles">
+              data-tour-id="nav-roles"
+            >
               <q-item-section avatar>
                 <q-icon name="admin_panel_settings" />
               </q-item-section>
-              <q-item-section>
-                Roles
-              </q-item-section>
+              <q-item-section> Roles </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'auditLogs' }" active-class="bg-primary text-white"
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'auditLogs' }"
+              active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.AuditLogsView)"
-              data-tour-id="nav-audit-logs">
+              data-tour-id="nav-audit-logs"
+            >
               <q-item-section avatar>
                 <q-icon name="history" />
               </q-item-section>
-              <q-item-section>
-                Audit Logs
-              </q-item-section>
+              <q-item-section> Audit Logs </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'systemLogs' }" active-class="bg-primary text-white"
-              v-if="fuseStore.hasPermission(Permission.LoggingRead)">
+            <q-item
+              clickable
+              v-ripple
+              :to="{ name: 'systemLogs' }"
+              active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.LoggingRead)"
+            >
               <q-item-section avatar>
                 <q-icon name="receipt_long" />
               </q-item-section>
-              <q-item-section>
-                Logs
-              </q-item-section>
+              <q-item-section> Logs </q-item-section>
             </q-item>
           </q-expansion-item>
         </q-list>
@@ -399,9 +578,17 @@
       <router-view />
     </q-page-container>
 
-    <LoginDialog v-model="showLoginDialog" :loading="loginLoading" :error="loginError" @submit="handleLogin" />
+    <LoginDialog
+      v-model="showLoginDialog"
+      :loading="loginLoading"
+      :error="loginError"
+      @submit="handleLogin"
+    />
 
-    <InitialSetupWizard :model-value="showSetupWizard" @created="handleEnvironmentCreated" />
+    <InitialSetupWizard
+      :model-value="showSetupWizard"
+      @created="handleEnvironmentCreated"
+    />
 
     <q-dialog v-model="aboutDialogOpen">
       <q-card class="about-dialog">
@@ -410,22 +597,49 @@
             <div class="text-h6">Fuse Inventory</div>
             <div class="text-caption text-grey-6">Build information</div>
           </div>
-          <q-btn v-close-popup flat round dense icon="close" aria-label="Close" />
+          <q-btn
+            v-close-popup
+            flat
+            round
+            dense
+            icon="close"
+            aria-label="Close"
+          />
         </q-card-section>
 
         <q-card-section v-if="aboutQuery.isFetching.value" class="about-state">
           <q-spinner color="primary" size="28px" />
           <span>Loading build details…</span>
         </q-card-section>
-        <q-card-section v-else-if="aboutQuery.error.value" class="about-state text-negative">
+        <q-card-section
+          v-else-if="aboutQuery.error.value"
+          class="about-state text-negative"
+        >
           <q-icon name="error_outline" size="28px" />
-          <span>{{ getErrorMessage(aboutQuery.error.value, 'Unable to load build details.') }}</span>
-          <q-btn flat dense color="primary" label="Retry" @click="aboutQuery.refetch()" />
+          <span>{{
+            getErrorMessage(
+              aboutQuery.error.value,
+              "Unable to load build details.",
+            )
+          }}</span>
+          <q-btn
+            flat
+            dense
+            color="primary"
+            label="Retry"
+            @click="aboutQuery.refetch()"
+          />
         </q-card-section>
         <q-card-section v-else-if="aboutQuery.data.value" class="about-details">
-          <div v-for="detail in aboutDetails" :key="detail.label" class="about-detail">
+          <div
+            v-for="detail in aboutDetails"
+            :key="detail.label"
+            class="about-detail"
+          >
             <span class="about-label">{{ detail.label }}</span>
-            <span :class="{ 'about-monospace': detail.monospace }">{{ detail.value }}</span>
+            <span :class="{ 'about-monospace': detail.monospace }">{{
+              detail.value
+            }}</span>
           </div>
         </q-card-section>
       </q-card>
@@ -434,319 +648,369 @@
     <q-dialog v-model="showOnboardingPrompt">
       <q-card style="min-width: 320px; max-width: 480px">
         <q-card-section class="row items-center">
-          <q-icon name="lightbulb" color="primary" size="36px" class="q-mr-md" />
+          <q-icon
+            name="lightbulb"
+            color="primary"
+            size="36px"
+            class="q-mr-md"
+          />
           <div>
             <div class="text-h6">Welcome to Fuse Inventory</div>
-            <div class="text-subtitle2 text-grey-7">Let us guide you through the first setup tasks.</div>
+            <div class="text-subtitle2 text-grey-7">
+              Let us guide you through the first setup tasks.
+            </div>
           </div>
         </q-card-section>
         <q-card-section>
-          Your foundation is ready. Follow the interactive guide to create an application, add its
-          first deployed instance, and inspect the resulting inventory.
+          Your foundation is ready. Follow the interactive guide to create an
+          application, add its first deployed instance, and inspect the
+          resulting inventory.
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Maybe later" color="primary" @click="showOnboardingPrompt = false" />
-          <q-btn flat label="Open guide" color="primary" @click="handlePromptStart" />
+          <q-btn
+            flat
+            label="Maybe later"
+            color="primary"
+            @click="showOnboardingPrompt = false"
+          />
+          <q-btn
+            flat
+            label="Open guide"
+            color="primary"
+            @click="handlePromptStart"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
-
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
-import { useRouter, useRoute } from 'vue-router'
-import { Notify, Dialog, useQuasar } from 'quasar'
-import { useFuseStore } from './stores/FuseStore'
-import LoginDialog from './components/security/LoginDialog.vue'
-import { HealthCheckProvider, LoginSecurityUser } from 'api/client'
-import { Permission } from 'permissions'
-import { getErrorMessage } from './utils/error'
-import { useOnboardingStore } from './stores/OnboardingStore'
-import { useOnboardingTour } from './composables/useOnboardingTour'
-import { useEnvironments } from './composables/useEnvironments'
-import { useDataStores } from './composables/useDataStores'
-import { useApplications } from './composables/useApplications'
-import CheatSheetDialog from './components/onboarding/CheatSheetDialog.vue'
-import InitialSetupWizard from './components/onboarding/InitialSetupWizard.vue'
-import InventoryNavigator from './components/InventoryNavigator.vue'
-import LicenseChip from './components/license/LicenseChip.vue'
-import { saveThemePreference } from './utils/themePreference'
-import { useFuseClient } from './composables/useFuseClient'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from "vue";
+import { useQuery } from "@tanstack/vue-query";
+import { useRouter, useRoute } from "vue-router";
+import { Notify, Dialog, useQuasar } from "quasar";
+import { useFuseStore } from "./stores/FuseStore";
+import LoginDialog from "./components/security/LoginDialog.vue";
+import { HealthCheckProvider, LoginSecurityUser } from "api/client";
+import { Permission } from "permissions";
+import { getErrorMessage } from "./utils/error";
+import { useOnboardingStore } from "./stores/OnboardingStore";
+import { useOnboardingTour } from "./composables/useOnboardingTour";
+import { useEnvironments } from "./composables/useEnvironments";
+import { useDataStores } from "./composables/useDataStores";
+import { useApplications } from "./composables/useApplications";
+import CheatSheetDialog from "./components/onboarding/CheatSheetDialog.vue";
+import InitialSetupWizard from "./components/onboarding/InitialSetupWizard.vue";
+import InventoryNavigator from "./components/InventoryNavigator.vue";
+import LicenseChip from "./components/license/LicenseChip.vue";
+import { saveThemePreference } from "./utils/themePreference";
+import { useFuseClient } from "./composables/useFuseClient";
 
-const leftDrawerOpen = ref(true)
-const quasar = useQuasar()
-const fuseStore = useFuseStore()
-const router = useRouter()
-const route = useRoute()
-const onboardingStore = useOnboardingStore()
-const { startTour } = useOnboardingTour()
-const client = useFuseClient()
+const leftDrawerOpen = ref(true);
+const quasar = useQuasar();
+const fuseStore = useFuseStore();
+const router = useRouter();
+const route = useRoute();
+const onboardingStore = useOnboardingStore();
+const { startTour } = useOnboardingTour();
+const client = useFuseClient();
 
-const environmentsQuery = useEnvironments()
-const dataStoresQuery = useDataStores()
-const applicationsQuery = useApplications()
-const aboutQuery = useQuery({ queryKey: ['about'], queryFn: () => client.aboutGet(), enabled: false, staleTime: Infinity })
-const aboutDialogOpen = ref(false)
+const environmentsQuery = useEnvironments();
+const dataStoresQuery = useDataStores();
+const applicationsQuery = useApplications();
+const aboutQuery = useQuery({
+  queryKey: ["about"],
+  queryFn: () => client.aboutGet(),
+  enabled: false,
+  staleTime: Infinity,
+});
+const aboutDialogOpen = ref(false);
 const aboutDetails = computed(() => {
-  const about = aboutQuery.data.value
-  if (!about) return []
+  const about = aboutQuery.data.value;
+  if (!about) return [];
   return [
-    { label: 'Version', value: about.version || 'Unknown' },
-    { label: 'Channel', value: about.channel || 'Unknown' },
-    { label: 'Built', value: about.buildDate || 'Unknown' },
-    { label: 'Commit', value: about.gitCommitIdShort || about.gitCommitId || 'Unknown', monospace: true }
-  ]
-})
+    { label: "Version", value: about.version || "Unknown" },
+    { label: "Channel", value: about.channel || "Unknown" },
+    { label: "Built", value: about.buildDate || "Unknown" },
+    {
+      label: "Commit",
+      value: about.gitCommitIdShort || about.gitCommitId || "Unknown",
+      monospace: true,
+    },
+  ];
+});
 
-const isIncompleteDataWarningEnabled = computed(() => fuseStore.appSettings?.incompleteDataWarningEnabled ?? false)
+const isIncompleteDataWarningEnabled = computed(
+  () => fuseStore.appSettings?.incompleteDataWarningEnabled ?? false,
+);
 
-const healthMonitoringEnabled = computed(() =>
-  !!fuseStore.appSettings && fuseStore.appSettings.healthCheckProvider !== HealthCheckProvider.None
-)
+const healthMonitoringEnabled = computed(
+  () =>
+    !!fuseStore.appSettings &&
+    fuseStore.appSettings.healthCheckProvider !== HealthCheckProvider.None,
+);
 
 function toggleTheme() {
-  const useDarkTheme = !quasar.dark.isActive
-  quasar.dark.set(useDarkTheme)
-  saveThemePreference(useDarkTheme ? 'dark' : 'light')
+  const useDarkTheme = !quasar.dark.isActive;
+  quasar.dark.set(useDarkTheme);
+  saveThemePreference(useDarkTheme ? "dark" : "light");
 }
 
 function openAboutDialog() {
-  aboutDialogOpen.value = true
-  if (!aboutQuery.data.value && !aboutQuery.isFetching.value) void aboutQuery.refetch()
+  aboutDialogOpen.value = true;
+  if (!aboutQuery.data.value && !aboutQuery.isFetching.value)
+    void aboutQuery.refetch();
 }
-watch(healthMonitoringEnabled, enabled => {
-  if (!enabled && route.name === 'healthOverview') void router.replace({ name: 'home' })
-})
+watch(healthMonitoringEnabled, (enabled) => {
+  if (!enabled && route.name === "healthOverview")
+    void router.replace({ name: "home" });
+});
 
-const showInventoryNavigator = computed(() => 
-  route.name === 'instanceEdit' || route.name === 'accountEdit'
-)
+const showInventoryNavigator = computed(
+  () => route.name === "instanceEdit" || route.name === "accountEdit",
+);
 
 const navigatorKind = computed(() => {
-  if (route.name === 'instanceEdit') return 'applications'
-  if (route.name === 'accountEdit') return 'accounts'
-  return 'applications'
-})
+  if (route.name === "instanceEdit") return "applications";
+  if (route.name === "accountEdit") return "accounts";
+  return "applications";
+});
 
-const showLoginDialog = ref(false)
-const loginLoading = ref(false)
-const loginError = ref<string | null>(null)
-const showOnboardingPrompt = ref(false)
-const showSetupWizard = ref(false)
+const showLoginDialog = ref(false);
+const loginLoading = ref(false);
+const loginError = ref<string | null>(null);
+const showOnboardingPrompt = ref(false);
+const showSetupWizard = ref(false);
 
 function handleAuthInvalid() {
-  fuseStore.invalidateAuth()
+  fuseStore.invalidateAuth();
 }
 
 const cheatSheetDialog = computed({
   get: () => onboardingStore.showCheatSheet,
-  set: (value: boolean) => onboardingStore.setCheatSheetVisible(value)
-})
+  set: (value: boolean) => onboardingStore.setCheatSheetVisible(value),
+});
 
 watch(
   () => onboardingStore.isTourActive,
   (isActive) => {
     if (isActive) {
-      leftDrawerOpen.value = true
+      leftDrawerOpen.value = true;
     }
     if (!isActive) {
-      showOnboardingPrompt.value = false
+      showOnboardingPrompt.value = false;
     }
-  }
-)
+  },
+);
 
 watch(
   () => onboardingStore.dismissedBanner,
   (dismissed) => {
     if (dismissed) {
-      showOnboardingPrompt.value = false
+      showOnboardingPrompt.value = false;
     }
-  }
-)
+  },
+);
 
 watch(
   () => onboardingStore.hasCompletedTour,
   (completed) => {
     if (completed) {
-      showOnboardingPrompt.value = false
+      showOnboardingPrompt.value = false;
     }
-  }
-)
+  },
+);
 
 onMounted(async () => {
-  window.addEventListener('fuse-auth-invalid', handleAuthInvalid)
-  await fuseStore.initializeAuth()
-  await onboardingStore.connectProgressUser(fuseStore.currentUser?.id ?? null)
+  window.addEventListener("fuse-auth-invalid", handleAuthInvalid);
+  await fuseStore.initializeAuth();
+  await onboardingStore.connectProgressUser(fuseStore.currentUser?.id ?? null);
 
   if (fuseStore.requireSetup) {
-    await router.push({ name: 'security' })
-    return
+    await router.push({ name: "security" });
+    return;
   }
 
-  await evaluateOnboardingPrompt()
-})
+  await evaluateOnboardingPrompt();
+});
 
 watch(
   () => fuseStore.requireSetup,
   (requiresSetup, previouslyRequired) => {
     if (previouslyRequired && !requiresSetup) {
-      void evaluateOnboardingPrompt()
+      void evaluateOnboardingPrompt();
     }
-  }
-)
+  },
+);
 
 watch(
   () => fuseStore.isLoggedIn,
   (isLoggedIn) => {
     if (isLoggedIn && !fuseStore.requireSetup) {
-      void evaluateOnboardingPrompt()
+      void evaluateOnboardingPrompt();
     }
-  }
-)
+  },
+);
 
 watch(
   () => fuseStore.currentUser?.id ?? null,
   (userId) => {
-    void onboardingStore.connectProgressUser(userId)
-  }
-)
+    void onboardingStore.connectProgressUser(userId);
+  },
+);
 
 onBeforeUnmount(() => {
-  window.removeEventListener('fuse-auth-invalid', handleAuthInvalid)
-})
+  window.removeEventListener("fuse-auth-invalid", handleAuthInvalid);
+});
 
 async function evaluateOnboardingPrompt() {
   if (fuseStore.requireSetup) {
-    showSetupWizard.value = false
-    showOnboardingPrompt.value = false
-    return
+    showSetupWizard.value = false;
+    showOnboardingPrompt.value = false;
+    return;
   }
 
   await Promise.allSettled([
     environmentsQuery.refetch(),
     dataStoresQuery.refetch(),
-    applicationsQuery.refetch()
-  ])
+    applicationsQuery.refetch(),
+  ]);
 
-  const environmentCount = environmentsQuery.data.value?.length ?? 0
-  const dataStoreCount = dataStoresQuery.data.value?.length ?? 0
-  const applicationCount = applicationsQuery.data.value?.length ?? 0
-  const totalResources = environmentCount + dataStoreCount + applicationCount
+  const environmentCount = environmentsQuery.data.value?.length ?? 0;
+  const dataStoreCount = dataStoresQuery.data.value?.length ?? 0;
+  const applicationCount = applicationsQuery.data.value?.length ?? 0;
+  const totalResources = environmentCount + dataStoreCount + applicationCount;
 
-  const hasTourRecord = onboardingStore.hasCompletedTour || !!onboardingStore.lastCompletedAt
+  const hasTourRecord =
+    onboardingStore.hasCompletedTour || !!onboardingStore.lastCompletedAt;
 
   if (
     environmentCount === 0 &&
     totalResources === 0 &&
     fuseStore.hasPermission(Permission.EnvironmentsCreate)
   ) {
-    showSetupWizard.value = true
-    showOnboardingPrompt.value = false
-    return
+    showSetupWizard.value = true;
+    showOnboardingPrompt.value = false;
+    return;
   }
 
-  showSetupWizard.value = false
+  showSetupWizard.value = false;
   if (
     !hasTourRecord &&
     !onboardingStore.dismissedBanner &&
     applicationCount === 0 &&
     fuseStore.hasPermission(Permission.ApplicationsCreate)
   ) {
-    showOnboardingPrompt.value = true
+    showOnboardingPrompt.value = true;
   }
 }
 
 function handleEnvironmentCreated() {
-  showSetupWizard.value = false
-  onboardingStore.setCheatSheetVisible(true)
+  showSetupWizard.value = false;
+  onboardingStore.setCheatSheetVisible(true);
 }
 
 function handleAuthClick() {
   if (fuseStore.isLoggedIn) {
     // Show logout confirmation
     Dialog.create({
-      title: 'Logout',
+      title: "Logout",
       message: `Are you sure you want to logout?`,
       cancel: true,
-      persistent: true
+      persistent: true,
     }).onOk(async () => {
       try {
-        await fuseStore.logout()
-        Notify.create({ type: 'positive', message: 'Logged out successfully' })
+        await fuseStore.logout();
+        Notify.create({ type: "positive", message: "Logged out successfully" });
       } catch (err) {
-        Notify.create({ type: 'negative', message: getErrorMessage(err, 'Failed to logout') })
+        Notify.create({
+          type: "negative",
+          message: getErrorMessage(err, "Failed to logout"),
+        });
       }
-    })
+    });
   } else {
     // Show login dialog
-    loginError.value = null
-    showLoginDialog.value = true
+    loginError.value = null;
+    showLoginDialog.value = true;
   }
 }
 
-async function handleLogin(credentials: { userName: string; password: string }) {
-  loginLoading.value = true
-  loginError.value = null
+async function handleLogin(credentials: {
+  userName: string;
+  password: string;
+}) {
+  loginLoading.value = true;
+  loginError.value = null;
 
   try {
     const payload = Object.assign(new LoginSecurityUser(), {
       userName: credentials.userName,
-      password: credentials.password
-    })
-    await fuseStore.login(payload)
-    showLoginDialog.value = false
-    Notify.create({ type: 'positive', message: `Welcome back, ${fuseStore.userName}!` })
-    await evaluateOnboardingPrompt()
+      password: credentials.password,
+    });
+    await fuseStore.login(payload);
+    showLoginDialog.value = false;
+    Notify.create({
+      type: "positive",
+      message: `Welcome back, ${fuseStore.userName}!`,
+    });
+    await evaluateOnboardingPrompt();
   } catch (err) {
-    loginError.value = getErrorMessage(err, 'Login failed')
+    loginError.value = getErrorMessage(err, "Login failed");
   } finally {
-    loginLoading.value = false
+    loginLoading.value = false;
   }
 }
 
 async function handleStartTour() {
   try {
-    leftDrawerOpen.value = true
-    const started = await startTour()
+    leftDrawerOpen.value = true;
+    const started = await startTour();
 
     if (!started) {
-      Notify.create({ type: 'info', message: 'All onboarding steps are already complete.' })
+      Notify.create({
+        type: "info",
+        message: "All onboarding steps are already complete.",
+      });
     }
   } catch (error) {
-    Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to start tour') })
+    Notify.create({
+      type: "negative",
+      message: getErrorMessage(error, "Unable to start tour"),
+    });
   }
 }
 
 function handlePromptStart() {
-  showOnboardingPrompt.value = false
-  void handleStartTour()
+  showOnboardingPrompt.value = false;
+  void handleStartTour();
 }
 
 function handleOpenCheatSheet() {
-  onboardingStore.selectGuide(null)
+  onboardingStore.selectGuide(null);
 }
 
 function handleResetOnboarding() {
   Dialog.create({
-    title: 'Reset onboarding',
-    message: 'This will clear your onboarding progress. Continue?',
+    title: "Reset onboarding",
+    message: "This will clear your onboarding progress. Continue?",
     cancel: true,
-    persistent: true
+    persistent: true,
   }).onOk(() => {
-    onboardingStore.reset()
-    Notify.create({ type: 'positive', message: 'Onboarding progress reset' })
-    void evaluateOnboardingPrompt()
-  })
+    onboardingStore.reset();
+    Notify.create({ type: "positive", message: "Onboarding progress reset" });
+    void evaluateOnboardingPrompt();
+  });
 }
 </script>
 
 <style>
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
 }
 
 * {
@@ -819,7 +1083,11 @@ h1 {
 }
 
 .nav-home .q-item__section--avatar .q-icon,
-.nav-group > .q-expansion-item__container > .q-item .q-item__section--avatar .q-icon {
+.nav-group
+  > .q-expansion-item__container
+  > .q-item
+  .q-item__section--avatar
+  .q-icon {
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -872,9 +1140,19 @@ h1 {
 }
 
 .body--dark .nav-group--inventory,
-.body--dark .nav-home { --nav-accent: #64b5f6; }
-.body--dark .nav-group--classification { --nav-accent: #b39ddb; }
-.body--dark .nav-group--insights { --nav-accent: #4db6ac; }
-.body--dark .nav-group--integrations { --nav-accent: #ffb74d; }
-.body--dark .nav-group--administration { --nav-accent: #b0bec5; }
+.body--dark .nav-home {
+  --nav-accent: #64b5f6;
+}
+.body--dark .nav-group--classification {
+  --nav-accent: #b39ddb;
+}
+.body--dark .nav-group--insights {
+  --nav-accent: #4db6ac;
+}
+.body--dark .nav-group--integrations {
+  --nav-accent: #ffb74d;
+}
+.body--dark .nav-group--administration {
+  --nav-accent: #b0bec5;
+}
 </style>

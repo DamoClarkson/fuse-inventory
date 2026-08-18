@@ -147,6 +147,20 @@ public sealed class ScrumPokerController(
         return result.IsSuccess ? NoContent() : ToErrorResult(result);
     }
 
+    [HttpPost("rooms/{roomCode}/remove-participant")]
+    [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ScrumPokerRoomResponse>> RemoveParticipant(string roomCode, [FromBody] ScrumPokerRemoveParticipantRequest request)
+    {
+        if (!await IsEnabled())
+            return NotFound();
+
+        var result = store.RemoveParticipant(roomCode, request.OwnerToken, request.ParticipantId, DateTime.UtcNow);
+        return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.OwnerToken)) : ToError<ScrumPokerRoomResponse>(result);
+    }
+
     private Task<bool> IsEnabled() => fuseStore.GetAsync(snapshot => snapshot.AppSettings.ScrumPokerEnabled);
 
     private static ScrumPokerSessionResponse ToSessionResponse(ScrumPokerSession session) =>
@@ -226,6 +240,8 @@ public sealed class ScrumPokerController(
 public sealed record ScrumPokerJoinRequest(string DisplayName);
 
 public sealed record ScrumPokerParticipantRequest(string ParticipantToken);
+
+public sealed record ScrumPokerRemoveParticipantRequest(string OwnerToken, Guid ParticipantId);
 
 public sealed record ScrumPokerCardRequest(string ParticipantToken, ScrumPokerCard? Card);
 

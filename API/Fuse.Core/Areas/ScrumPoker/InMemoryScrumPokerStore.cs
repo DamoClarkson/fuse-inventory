@@ -149,6 +149,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         var (state, participant) = stateResult.Value!;
         lock (state.Gate)
         {
+            if (participant.Id != state.OwnerId)
+                return Result<ScrumPokerRoom>.Failure("Only the room owner can hide results.", ErrorType.Unauthorized);
+
             state.Participants[participant.Id] = participant with { LastSeenUtc = utcNow };
             state.LastActivityUtc = utcNow;
 
@@ -178,6 +181,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         var (state, participant) = stateResult.Value!;
         lock (state.Gate)
         {
+            if (participant.Id != state.OwnerId)
+                return Result<ScrumPokerRoom>.Failure("Only the room owner can reveal results.", ErrorType.Unauthorized);
+
             state.Participants[participant.Id] = participant with { LastSeenUtc = utcNow };
             state.LastActivityUtc = utcNow;
             if (state.Phase == ScrumPokerPhase.Voting)
@@ -199,6 +205,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         var (state, participant) = stateResult.Value!;
         lock (state.Gate)
         {
+            if (participant.Id != state.OwnerId)
+                return Result<ScrumPokerRoom>.Failure("Only the room owner can hide results.", ErrorType.Unauthorized);
+
             state.Participants[participant.Id] = participant with { LastSeenUtc = utcNow };
             state.LastActivityUtc = utcNow;
             if (state.Phase == ScrumPokerPhase.Revealed)
@@ -220,6 +229,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         var (state, participant) = stateResult.Value!;
         lock (state.Gate)
         {
+            if (participant.Id != state.OwnerId)
+                return Result<ScrumPokerRoom>.Failure("Only the room owner can reset the round.", ErrorType.Unauthorized);
+
             foreach (var id in state.Participants.Keys.ToArray())
             {
                 var current = state.Participants[id];
@@ -244,6 +256,31 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         lock (state.Gate)
         {
             state.Participants.Remove(participant.Id);
+            state.LastActivityUtc = utcNow;
+            state.Revision++;
+            return Result<ScrumPokerRoom>.Success(CreateRoomSnapshot(state));
+        }
+    }
+
+    public Result<ScrumPokerRoom> RemoveParticipant(string roomCode, string ownerToken, Guid participantId, DateTime utcNow)
+    {
+        var stateResult = GetParticipantRoom(roomCode, ownerToken, utcNow);
+        if (!stateResult.IsSuccess)
+            return Result<ScrumPokerRoom>.Failure(stateResult.Error!, stateResult);
+
+        var (state, owner) = stateResult.Value!;
+        lock (state.Gate)
+        {
+            if (owner.Id != state.OwnerId)
+                return Result<ScrumPokerRoom>.Failure("Only the room owner can remove participants.", ErrorType.Unauthorized);
+
+            if (participantId == state.OwnerId)
+                return Result<ScrumPokerRoom>.Failure("The room owner cannot be removed.");
+
+            // Removal is idempotent so an owner can clear a participant whose disconnected
+            // session was already cleaned up before the remove request arrived.
+            state.Participants.Remove(participantId);
+
             state.LastActivityUtc = utcNow;
             state.Revision++;
             return Result<ScrumPokerRoom>.Success(CreateRoomSnapshot(state));
@@ -349,6 +386,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         public object Gate { get; } = new();
         public string RoomCode { get; } = roomCode;
         public DateTime CreatedUtc { get; } = createdUtc;
+        public Guid OwnerId { get; } = owner.Id;
         public DateTime LastActivityUtc { get; set; } = createdUtc;
         public int Round { get; set; } = 1;
         public ScrumPokerPhase Phase { get; set; } = ScrumPokerPhase.Voting;

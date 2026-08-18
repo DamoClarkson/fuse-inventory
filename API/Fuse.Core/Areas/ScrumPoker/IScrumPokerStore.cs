@@ -14,4 +14,5 @@ public interface IScrumPokerStore
     Result<ScrumPokerRoom> Hide(string roomCode, string participantToken, DateTime utcNow);
     Result<ScrumPokerRoom> Reset(string roomCode, string participantToken, DateTime utcNow);
     Result<ScrumPokerRoom> Leave(string roomCode, string participantToken, DateTime utcNow);
+    Result<ScrumPokerRoom> RemoveParticipant(string roomCode, string ownerToken, Guid participantId, DateTime utcNow);
 }
