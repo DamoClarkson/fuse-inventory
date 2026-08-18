@@ -28,8 +28,7 @@ public class PasswordGeneratorServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get,
+            SecurityContext: SecurityContextHelper.Get,
             AppSettings: new AppSettings(),
             PasswordGeneratorConfig: config
         );

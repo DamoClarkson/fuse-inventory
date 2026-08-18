@@ -18,25 +18,9 @@ public record SecurityUserInfo(
     {
     }
 
-    public SecurityUserInfo(SecurityUser user)
-        : this(
-            user.Id,
-            user.UserName,
-            user.Role == SecurityRole.Admin,
-            user.RoleIds,
-            user.CreatedAt,
-            user.UpdatedAt)
-    {
-    }
-
     public static SecurityUserInfo FromFuseUser(FuseUser user)
     {
         return new SecurityUserInfo(user);
     }
 
-    public static SecurityUserInfo FromSecurityUser(SecurityUser user)
-    {
-        return new SecurityUserInfo(user);
-    }
 }
-

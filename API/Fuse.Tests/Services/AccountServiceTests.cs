@@ -51,7 +51,6 @@ public class AccountServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContext: SecurityContextHelper.Get,
             AppSettings: new AppSettings()
         );
@@ -783,7 +782,6 @@ public class AccountServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: new[] { broker1, broker2, broker3 },
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContext: SecurityContextHelper.Get,
             AppSettings: new AppSettings()
         );

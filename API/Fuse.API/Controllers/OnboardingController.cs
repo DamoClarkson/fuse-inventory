@@ -7,6 +7,7 @@ namespace Fuse.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[AllowWithoutPermission]
 public sealed class OnboardingController(IFuseStore fuseStore, ICurrentUser currentUser) : ControllerBase
 {
     [HttpGet("progress")]

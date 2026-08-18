@@ -9,6 +9,7 @@ namespace Fuse.API.Controllers;
 public sealed class LicenseController(ILicenseService licenseService) : ControllerBase
 {
     [HttpGet]
+    [AllowWithoutPermission]
     [SwaggerOperation(OperationId = "getLicenseStatus")]
     public Task<LicenseStatusResponse> Get(CancellationToken ct) => licenseService.GetStatusAsync(ct);
 

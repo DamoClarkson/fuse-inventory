@@ -48,7 +48,6 @@ public class UndoServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContext: SecurityContextHelper.Get,
             AppSettings: new AppSettings()
         );
@@ -198,7 +197,6 @@ public class UndoServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContext: SecurityContextHelper.Get,
             AppSettings: new AppSettings()
         );

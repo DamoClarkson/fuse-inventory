@@ -202,17 +202,17 @@ public class SnapshotChangeTracker
                 EntityType.Identity,
                 userContext);
             
-            // Track Security.Users
+            // Track current security users
             await TrackCollectionChangesAsync(
-                _previousSnapshot.Security.Users, 
-                newSnapshot.Security.Users, 
+                _previousSnapshot.SecurityContext.Users,
+                newSnapshot.SecurityContext.Users,
                 EntityType.SecurityUser,
                 userContext);
             
-            // Track Security.Roles
+            // Track current security roles
             await TrackCollectionChangesAsync(
-                _previousSnapshot.Security.Roles, 
-                newSnapshot.Security.Roles, 
+                _previousSnapshot.SecurityContext.Roles,
+                newSnapshot.SecurityContext.Roles,
                 EntityType.SecurityRole,
                 userContext);
         }

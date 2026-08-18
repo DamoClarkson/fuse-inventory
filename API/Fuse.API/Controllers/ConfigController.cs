@@ -57,6 +57,7 @@ namespace Fuse.API.Controllers
         /// <param name="format">The template format: json or yaml (default: json)</param>
         /// <returns>A template configuration file</returns>
         [HttpGet("template")]
+        [AllowWithoutPermission]
         [SwaggerOperation(OperationId = "template")]
         [ProducesResponseType(200, Type = typeof(FileContentResult))]
         [ProducesResponseType(400)]

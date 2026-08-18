@@ -8,6 +8,7 @@ namespace Fuse.API.Controllers;
 
 [ApiController]
 [Route("api/scrum-poker")]
+[AllowWithoutPermission]
 public sealed class ScrumPokerController(
     IScrumPokerStore store,
     IFuseStore fuseStore) : ControllerBase

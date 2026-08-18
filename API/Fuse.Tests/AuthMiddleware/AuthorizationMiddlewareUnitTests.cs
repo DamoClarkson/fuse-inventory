@@ -157,14 +157,9 @@ public class AuthorizationMiddlewareUnitTests
     }
 
     [Fact]
-    public async Task InvokeAsync_RestrictedEditing_WithoutRequiredPermission_Allows()
+    public async Task InvokeAsync_RestrictedEditing_WithoutPermissionMetadata_Returns401()
     {
-        var wasNextCalled = false;
-        var middleware = new AuthorizationMiddleware(_ =>
-        {
-            wasNextCalled = true;
-            return Task.CompletedTask;
-        });
+        var middleware = new AuthorizationMiddleware(_ => Task.CompletedTask);
 
         var context = NewContext(authenticated: false, requiredPermissionKey: null);
         var store = MockStore(NewSnapshot(
@@ -173,7 +168,7 @@ public class AuthorizationMiddlewareUnitTests
 
         await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
 
-        Assert.True(wasNextCalled);
+        Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
     }
 
     [Fact]
@@ -257,7 +252,22 @@ public class AuthorizationMiddlewareUnitTests
     }
 
     [Fact]
-    public async Task InvokeAsync_FullyRestricted_WithoutRequiredPermission_Allows()
+    public async Task InvokeAsync_FullyRestricted_WithoutPermissionMetadata_Returns403()
+    {
+        var middleware = new AuthorizationMiddleware(_ => Task.CompletedTask);
+
+        var context = NewContext(authenticated: true, requiredPermissionKey: null);
+        var store = MockStore(NewSnapshot(
+            posture: SecurityPosture.FullyRestricted,
+            users: new[] { NewAdminUser() }));
+
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
+
+        Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ExplicitlyAllowedWithoutPermission_AllowsRequest()
     {
         var wasNextCalled = false;
         var middleware = new AuthorizationMiddleware(_ =>
@@ -266,7 +276,10 @@ public class AuthorizationMiddlewareUnitTests
             return Task.CompletedTask;
         });
 
-        var context = NewContext(authenticated: true, requiredPermissionKey: null);
+        var context = NewContext(
+            authenticated: false,
+            requiredPermissionKey: null,
+            allowWithoutPermission: true);
         var store = MockStore(NewSnapshot(
             posture: SecurityPosture.FullyRestricted,
             users: new[] { NewAdminUser() }));
@@ -309,7 +322,8 @@ public class AuthorizationMiddlewareUnitTests
         bool isAdmin = false,
         string? requiredPermissionKey = null,
         IReadOnlyList<Guid>? roleIds = null,
-        bool allowDuringSetup = false)
+        bool allowDuringSetup = false,
+        bool allowWithoutPermission = false)
     {
         var claims = new List<Claim>();
         if (authenticated)
@@ -339,6 +353,8 @@ public class AuthorizationMiddlewareUnitTests
             metadataItems.Add(new RequirePermissionKeyAttribute(requiredPermissionKey));
         if (allowDuringSetup)
             metadataItems.Add(new AllowDuringSetupAttribute());
+        if (allowWithoutPermission)
+            metadataItems.Add(new AllowWithoutPermissionAttribute());
 
         var metadata = metadataItems.Count == 0
             ? EndpointMetadataCollection.Empty
@@ -366,7 +382,6 @@ public class AuthorizationMiddlewareUnitTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContext: new SecurityContext(posture, Array.Empty<FuseRole>(), users, Array.Empty<FuseApiKey>(), Array.Empty<Session>()),
             AppSettings: new AppSettings()
         );
