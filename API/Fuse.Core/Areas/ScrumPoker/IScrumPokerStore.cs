@@ -4,8 +4,8 @@ namespace Fuse.Core.Areas.ScrumPoker;
 
 public interface IScrumPokerStore
 {
-    Result<ScrumPokerSession> CreateRoom(string displayName, DateTime utcNow);
-    Result<ScrumPokerSession> JoinRoom(string roomCode, string displayName, DateTime utcNow);
+    Result<ScrumPokerSession> CreateRoom(string displayName, DateTime utcNow, string? avatarColor = null);
+    Result<ScrumPokerSession> JoinRoom(string roomCode, string displayName, DateTime utcNow, string? participantToken = null, string? avatarColor = null, bool allowRemovedParticipantAsNew = false);
     Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow);
     bool RoomExists(string roomCode, DateTime utcNow);
     Result<ScrumPokerRoom> GetRoom(string roomCode, string participantToken, DateTime utcNow);
@@ -16,4 +16,5 @@ public interface IScrumPokerStore
     Result<ScrumPokerRoom> Reset(string roomCode, string participantToken, DateTime utcNow);
     Result<ScrumPokerRoom> Leave(string roomCode, string participantToken, DateTime utcNow);
     Result<ScrumPokerRoom> RemoveParticipant(string roomCode, string ownerToken, Guid participantId, DateTime utcNow);
+    Result<ScrumPokerRoom> TransferOwnership(string roomCode, string ownerToken, Guid participantId, DateTime utcNow);
 }
