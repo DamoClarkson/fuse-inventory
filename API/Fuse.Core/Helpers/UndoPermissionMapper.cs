@@ -1,33 +1,35 @@
+using Fuse.Core.Areas.Undo;
 using Fuse.Core.Models;
 
 namespace Fuse.Core.Helpers;
 
 public static class UndoPermissionMapper
 {
-    public static Permission ToPermission(EntityType entityType)
+    public static string ToPermissionKey(EntityType entityType)
     {
         return entityType switch
         {
-            EntityType.Application => Permission.ApplicationsUndo,
-            EntityType.Account => Permission.AccountsUndo,
-            EntityType.Identity => Permission.IdentitiesUndo,
-            EntityType.DataStore => Permission.DataStoresUndo,
-            EntityType.Platform => Permission.PlatformsUndo,
-            EntityType.Environment => Permission.EnvironmentsUndo,
-            EntityType.ExternalResource => Permission.ExternalResourcesUndo,
-            EntityType.MessageBroker => Permission.MessageBrokersUndo,
-            EntityType.Tag => Permission.TagsUndo,
-            EntityType.Position => Permission.PositionsUndo,
-            EntityType.ResponsibilityType => Permission.ResponsibilitiesUndo,
-            EntityType.ResponsibilityAssignment => Permission.ResponsibilitiesUndo,
-            EntityType.Risk => Permission.RisksUndo,
-            EntityType.SecretProvider => Permission.SecretProvidersUndo,
-            EntityType.SqlIntegration => Permission.SqlIntegrationsUndo,
-            EntityType.KumaIntegration => Permission.KumaIntegrationsUndo,
-            EntityType.SecurityUser => Permission.SecurityUndo,
-            EntityType.SecurityRole => Permission.SecurityUndo,
-            EntityType.PasswordGeneratorConfig => Permission.ConfigurationUndo,
-            _ => Permission.ConfigurationUndo
+            EntityType.Application => UndoPermissions.ApplicationsUndoKey,
+            EntityType.Account => UndoPermissions.AccountsUndoKey,
+            EntityType.Identity => UndoPermissions.IdentitiesUndoKey,
+            EntityType.DataStore => UndoPermissions.DataStoresUndoKey,
+            EntityType.Platform => UndoPermissions.PlatformsUndoKey,
+            EntityType.Environment => UndoPermissions.EnvironmentsUndoKey,
+            EntityType.ExternalResource => UndoPermissions.ExternalResourcesUndoKey,
+            EntityType.MessageBroker => UndoPermissions.MessageBrokersUndoKey,
+            EntityType.Tag => UndoPermissions.TagsUndoKey,
+            EntityType.Position => UndoPermissions.PositionsUndoKey,
+            EntityType.ResponsibilityType => UndoPermissions.ResponsibilitiesUndoKey,
+            EntityType.ResponsibilityAssignment => UndoPermissions.ResponsibilitiesUndoKey,
+            EntityType.Risk => UndoPermissions.RisksUndoKey,
+            EntityType.SecretProvider => UndoPermissions.SecretProvidersUndoKey,
+            EntityType.SqlIntegration => UndoPermissions.SqlIntegrationsUndoKey,
+            EntityType.KumaIntegration => UndoPermissions.KumaIntegrationsUndoKey,
+            EntityType.SecurityUser => UndoPermissions.SecurityUndoKey,
+            EntityType.SecurityRole => UndoPermissions.SecurityUndoKey,
+            EntityType.PasswordGeneratorConfig => UndoPermissions.ConfigurationUndoKey,
+            _ => UndoPermissions.ConfigurationUndoKey
         };
     }
+
 }

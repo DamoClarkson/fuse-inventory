@@ -143,8 +143,6 @@ public static class FuseCodeModule
         
         // Register startup tasks in execution order, then the orchestrator
         services.AddScoped<IStartupTask, StoreLoadTask>();
-        services.AddScoped<IStartupTask, LegacyRoleMigrationTask>();
-        services.AddScoped<IStartupTask, SecurityContextMigrationTask>();
         services.AddScoped<IStartupTask, PermissionCatalogValidationTask>();
         services.AddScoped<IStartupTask, SnapshotTrackerRegistrationTask>();
         services.AddScoped<IAppInitializationService, AppInitializationService>();

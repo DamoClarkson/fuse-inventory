@@ -9,6 +9,8 @@ namespace Fuse.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[AllowDuringSetup]
+[AllowWithoutPermission]
 public class HealthController : ControllerBase
 {
     private readonly IHealthCheckService _healthCheckService;

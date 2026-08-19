@@ -26,7 +26,7 @@ public class SqlIntegrationServiceTests
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
             SecretProviders: Array.Empty<SecretProvider>(),
-            SqlIntegrations: (integrations ?? Array.Empty<SqlIntegration>()).ToArray(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(), Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SqlIntegrations: (integrations ?? Array.Empty<SqlIntegration>()).ToArray(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             SecurityContextHelper.Get
         );
         return new InMemoryFuseStore(snapshot);

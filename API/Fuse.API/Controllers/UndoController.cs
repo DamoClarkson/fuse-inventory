@@ -18,6 +18,7 @@ public class UndoController : ControllerBase
     }
 
     [HttpPost("{versionId}")]
+    [RequireUndoPermission]
     [SwaggerOperation(OperationId = "undoChange")]
     [ProducesResponseType(200, Type = typeof(UndoChangeResult))]
     [ProducesResponseType(404)]

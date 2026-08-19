@@ -228,9 +228,8 @@ public class JsonFuseStoreTests : IDisposable
             ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get,
-            new AppSettings()
+            SecurityContext: SecurityContextHelper.Get,
+            AppSettings: new AppSettings()
         );
 
         await store.SaveAsync(snapshot);
@@ -275,19 +274,5 @@ public class JsonFuseStoreTests : IDisposable
             }
         }
 
-        var securityPath = Path.Combine(_testDataDirectory, "security.json");
-        if (!File.Exists(securityPath))
-        {
-            var securityJson = """
-            {
-                "settings": {
-                    "level": "None",
-                    "updatedAt": "2024-01-01T00:00:00Z"
-                },
-                "users": []
-            }
-            """;
-            await File.WriteAllTextAsync(securityPath, securityJson);
-        }
     }
 }

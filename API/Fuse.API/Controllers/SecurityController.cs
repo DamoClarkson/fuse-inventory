@@ -22,6 +22,7 @@ namespace Fuse.API.Controllers
         [HttpGet("state")]
         [SwaggerOperation(OperationId = "state")]
         [AllowDuringSetup]
+        [AllowWithoutPermission]
         [ProducesResponseType(200)]
         public async Task<ActionResult<SecurityStateResponse>> GetState()
         {
@@ -94,6 +95,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("login")]
+        [AllowWithoutPermission]
         [SwaggerOperation(OperationId = "login")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -128,6 +130,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("logout")]
+        [AllowWithoutPermission]
         [SwaggerOperation(OperationId = "logout")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]

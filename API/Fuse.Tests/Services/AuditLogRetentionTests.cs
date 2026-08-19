@@ -283,10 +283,6 @@ public class AuditLogRetentionTests
                 ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
                 Risks: Array.Empty<Risk>(),
                 MessageBrokers: Array.Empty<MessageBroker>(),
-                Security: new SecurityState(
-                    new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow),
-                    Array.Empty<SecurityUser>()
-                ),
                 SecurityContext: new SecurityContext(
                     SecurityPosture.Unrestricted,
                     Array.Empty<FuseRole>(),

@@ -29,9 +29,8 @@ public sealed class InMemoryFuseStore : IFuseStore
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get,
-            new AppSettings()
+            SecurityContext: SecurityContextHelper.Get,
+            AppSettings: new AppSettings()
         );
     }
 

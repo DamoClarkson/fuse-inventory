@@ -68,14 +68,14 @@ public class SnapshotChangeTrackerTests
             .Returns(Task.CompletedTask);
         var tracker = new SnapshotChangeTracker(history.Object);
         var initial = new InMemoryFuseStore().Current!;
-        var role = new Role(Guid.NewGuid(), "Operators", "", [], DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(-1));
-        var withRole = initial with { Security = initial.Security with { Roles = [role] } };
+        var role = new FuseRole(Guid.NewGuid(), "Operators", "", [], DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(-1));
+        var withRole = initial with { SecurityContext = initial.SecurityContext with { Roles = [role] } };
         tracker.Initialize(withRole);
 
         await tracker.OnSnapshotChangedAsync(withRole);
         await tracker.OnSnapshotChangedAsync(withRole with
         {
-            Security = withRole.Security with { Roles = [role with { UpdatedAt = DateTime.UtcNow }] }
+            SecurityContext = withRole.SecurityContext with { Roles = [role with { UpdatedAt = DateTime.UtcNow }] }
         });
 
         var version = Assert.Single(saved);

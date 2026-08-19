@@ -681,7 +681,6 @@ public class ApplicationServiceTests
             SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContext: SecurityContextHelper.Get,
             AppSettings: new AppSettings()
         );
