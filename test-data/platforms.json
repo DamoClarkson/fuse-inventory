@@ -5,11 +5,13 @@
     "dnsName": "SQL.company.com",
     "os": "Windows",
     "kind": "Server",
-    "ipAddress": "172.30.30.1",
     "notes": null,
     "tagIds": [],
     "createdAt": "2026-02-25T19:18:46.6915676Z",
-    "updatedAt": "2026-02-25T19:22:57.7112464Z"
+    "updatedAt": "2026-02-25T19:22:57.7112464Z",
+    "ipAddresses": [
+      "172.30.30.1"
+    ]
   },
   {
     "id": "8fa268ee-c5cb-4270-9376-adaab11be04c",
@@ -17,11 +19,13 @@
     "dnsName": "mongo.comapny.com",
     "os": "Linux",
     "kind": "Server",
-    "ipAddress": "172.30.30.2",
     "notes": null,
     "tagIds": [],
     "createdAt": "2026-02-25T19:19:37.4140874Z",
-    "updatedAt": "2026-02-25T19:23:04.6842609Z"
+    "updatedAt": "2026-02-25T19:23:04.6842609Z",
+    "ipAddresses": [
+      "172.30.30.2"
+    ]
   },
   {
     "id": "33d77d2d-c799-48c7-b9f1-22fbad11f1a7",
@@ -29,11 +33,13 @@
     "dnsName": "SQL.preprod.company.com",
     "os": "Windows",
     "kind": "Server",
-    "ipAddress": "172.30.29.1",
     "notes": null,
     "tagIds": [],
     "createdAt": "2026-02-25T19:20:28.6161628Z",
-    "updatedAt": "2026-02-25T19:23:13.1548138Z"
+    "updatedAt": "2026-02-25T19:23:13.1548138Z",
+    "ipAddresses": [
+      "172.30.29.1"
+    ]
   },
   {
     "id": "3a770e79-1aee-4a3f-b6b0-c50a9fa8dddc",
@@ -41,11 +47,13 @@
     "dnsName": "mongo.preprod.company.com",
     "os": "Linux",
     "kind": "Server",
-    "ipAddress": "172.30.29.2",
     "notes": null,
     "tagIds": [],
     "createdAt": "2026-02-25T19:21:07.7394996Z",
-    "updatedAt": "2026-02-25T19:23:21.9713594Z"
+    "updatedAt": "2026-02-25T19:23:21.9713594Z",
+    "ipAddresses": [
+      "172.30.29.2"
+    ]
   },
   {
     "id": "e13ef2cf-87b2-42a6-9990-260dce15eb54",
@@ -53,11 +61,13 @@
     "dnsName": "kubernetes.company.com",
     "os": "Linux",
     "kind": "Cluster",
-    "ipAddress": "172.30.30.10",
     "notes": "Represents the control node in our cluster",
     "tagIds": [],
     "createdAt": "2026-02-25T19:22:37.3794575Z",
-    "updatedAt": "2026-02-25T19:22:48.2553154Z"
+    "updatedAt": "2026-02-25T19:22:48.2553154Z",
+    "ipAddresses": [
+      "172.30.30.10"
+    ]
   },
   {
     "id": "ddce937b-316a-4c2e-a54f-0133640aff0e",
@@ -65,11 +75,13 @@
     "dnsName": "kubernetes.preprod.comapny.com",
     "os": "Linux",
     "kind": "Cluster",
-    "ipAddress": "172.30.29.10",
     "notes": null,
     "tagIds": [],
     "createdAt": "2026-02-25T19:24:02.8846443Z",
-    "updatedAt": "2026-02-25T19:24:02.8846443Z"
+    "updatedAt": "2026-02-25T19:24:02.8846443Z",
+    "ipAddresses": [
+      "172.30.29.10"
+    ]
   },
   {
     "id": "ce3a6f17-1dde-4735-843e-1f76347eb5ed",
@@ -77,11 +89,13 @@
     "dnsName": "SQL.dev.company.com",
     "os": "Windows",
     "kind": "Server",
-    "ipAddress": "172.30.28.1",
     "notes": null,
     "tagIds": [],
     "createdAt": "2026-02-25T19:24:31.9594938Z",
-    "updatedAt": "2026-02-25T19:24:31.9594938Z"
+    "updatedAt": "2026-02-25T19:24:31.9594938Z",
+    "ipAddresses": [
+      "172.30.28.1"
+    ]
   },
   {
     "id": "64ad2c75-0159-4205-8874-0c38f5e016bf",
@@ -89,11 +103,13 @@
     "dnsName": "mongo.dev.company.com",
     "os": "Linux",
     "kind": "Server",
-    "ipAddress": "172.30.28.2",
     "notes": null,
     "tagIds": [],
     "createdAt": "2026-02-25T19:25:10.6290616Z",
-    "updatedAt": "2026-02-25T19:25:10.6290616Z"
+    "updatedAt": "2026-02-25T19:25:10.6290616Z",
+    "ipAddresses": [
+      "172.30.28.2"
+    ]
   },
   {
     "id": "5131c464-beec-4b9b-9f5e-c1eef07910c7",
@@ -101,10 +117,12 @@
     "dnsName": "kubernetes.dev.company.com",
     "os": "Linux",
     "kind": "Cluster",
-    "ipAddress": "172.30.28.10",
     "notes": null,
     "tagIds": [],
     "createdAt": "2026-02-25T19:25:46.7770943Z",
-    "updatedAt": "2026-02-25T19:25:46.7770943Z"
+    "updatedAt": "2026-02-25T19:25:46.7770943Z",
+    "ipAddresses": [
+      "172.30.28.10"
+    ]
   }
 ]

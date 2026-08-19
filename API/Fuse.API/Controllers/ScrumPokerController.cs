@@ -50,8 +50,18 @@ public sealed class ScrumPokerController(
         if (!await IsEnabled())
             return NotFound();
 
-        var result = store.JoinOrCreateRoom(roomCode, request.DisplayName, DateTime.UtcNow);
+        var result = store.JoinRoom(roomCode, request.DisplayName, DateTime.UtcNow);
         return result.IsSuccess ? Ok(ToSessionResponse(result.Value!)) : ToError<ScrumPokerSessionResponse>(result);
+    }
+
+    [HttpGet("rooms/{roomCode}/availability")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<object>> GetRoomAvailability(string roomCode)
+    {
+        if (!await IsEnabled())
+            return NotFound();
+
+        return Ok(new { exists = store.RoomExists(roomCode, DateTime.UtcNow) });
     }
 
     [HttpGet("rooms/{roomCode}/state")]

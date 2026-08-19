@@ -9,6 +9,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
     public const int MaxParticipantsPerRoom = 20;
     public const int MaxDisplayNameLength = 50;
     public static readonly TimeSpan DefaultRoomLifetime = TimeSpan.FromHours(4);
+    public static readonly TimeSpan EmptyRoomGracePeriod = TimeSpan.FromSeconds(30);
 
     private const int RoomCodeLength = 8;
     private const int ParticipantTokenLength = 32;
@@ -65,6 +66,8 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 
             var participant = CreateParticipant(nameResult.Value!, utcNow);
             state.Participants.Add(participant.Id, participant);
+            if (state.OwnerId == Guid.Empty)
+                state.OwnerId = participant.Id;
             state.LastActivityUtc = utcNow;
             state.Revision++;
             return Result<ScrumPokerSession>.Success(CreateSession(state, participant));
@@ -95,6 +98,8 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             return Result<ScrumPokerSession>.Success(CreateSession(state));
         }
     }
+
+    public bool RoomExists(string roomCode, DateTime utcNow) => FindActiveRoom(roomCode, utcNow) is not null;
 
     public Result<ScrumPokerRoom> GetRoom(string roomCode, string participantToken, DateTime utcNow)
     {
@@ -256,6 +261,8 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         lock (state.Gate)
         {
             state.Participants.Remove(participant.Id);
+            if (participant.Id == state.OwnerId)
+                state.OwnerId = state.Participants.Keys.FirstOrDefault();
             state.LastActivityUtc = utcNow;
             state.Revision++;
             return Result<ScrumPokerRoom>.Success(CreateRoomSnapshot(state));
@@ -341,7 +348,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         }
     }
 
-    private bool IsExpired(RoomState state, DateTime utcNow) => utcNow - state.LastActivityUtc >= _roomLifetime;
+    private bool IsExpired(RoomState state, DateTime utcNow) =>
+        utcNow - state.LastActivityUtc >=
+        (state.Participants.Count == 0 ? EmptyRoomGracePeriod : _roomLifetime);
 
     private static ScrumPokerParticipant CreateParticipant(string displayName, DateTime utcNow) =>
         new(Guid.NewGuid(), displayName, RandomString("", ParticipantTokenLength), null, utcNow);
@@ -386,7 +395,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         public object Gate { get; } = new();
         public string RoomCode { get; } = roomCode;
         public DateTime CreatedUtc { get; } = createdUtc;
-        public Guid OwnerId { get; } = owner.Id;
+        public Guid OwnerId { get; set; } = owner.Id;
         public DateTime LastActivityUtc { get; set; } = createdUtc;
         public int Round { get; set; } = 1;
         public ScrumPokerPhase Phase { get; set; } = ScrumPokerPhase.Voting;
