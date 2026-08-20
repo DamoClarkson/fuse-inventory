@@ -271,7 +271,7 @@
                     :style="
                       participantAvatarStyle(
                         participant,
-                        participant.id === room?.ownerParticipantId,
+                        sameParticipantId(participant.id, room?.ownerParticipantId),
                       )
                     "
                     >{{
@@ -283,7 +283,7 @@
                   <q-item-label class="participant-name-label"
                     >{{ participant.displayName
                     }}<q-badge
-                      v-if="participant.id === currentParticipantId"
+                      v-if="sameParticipantId(participant.id, currentParticipantId)"
                       outline
                       color="primary"
                       label="You"
@@ -292,17 +292,27 @@
                   <q-item-label caption class="participant-role-label">
                     <span
                       :class="{
-                        'participant-role-label--owner':
-                          participant.id === room?.ownerParticipantId,
+                        'participant-role-label--owner': sameParticipantId(
+                          participant.id,
+                          room?.ownerParticipantId,
+                        ),
                       }"
                       >{{
-                        participant.id === room?.ownerParticipantId
+                        sameParticipantId(
+                          participant.id,
+                          room?.ownerParticipantId,
+                        )
                           ? "Owner"
                           : "Participant"
                       }}</span
                     >
                     <template
-                      v-if="participant.id === room?.currentHostParticipantId"
+                      v-if="
+                        sameParticipantId(
+                          participant.id,
+                          room?.currentHostParticipantId,
+                        )
+                      "
                     >
                       <span aria-hidden="true">-</span>
                       <span class="participant-role-label--host">Host</span>
@@ -539,10 +549,18 @@ const canSubmit = computed(
 );
 const currentParticipantId = computed(() => session.value?.participantId);
 const isRoomOwner = computed(
-  () => currentParticipantId.value === room.value?.ownerParticipantId,
+  () =>
+    sameParticipantId(
+      currentParticipantId.value,
+      room.value?.ownerParticipantId,
+    ),
 );
 const isCurrentHost = computed(
-  () => currentParticipantId.value === room.value?.currentHostParticipantId,
+  () =>
+    sameParticipantId(
+      currentParticipantId.value,
+      room.value?.currentHostParticipantId,
+    ),
 );
 const roomAutoReveal = computed(() => room.value?.autoReveal === true);
 const readyCount = computed(
@@ -684,11 +702,8 @@ function participantAvatarStyle(
   );
   if (selectedColor) {
     return {
-      "--participant-avatar-bg": themedSurfaceColor(
-        selectedColor.background,
-        30,
-      ),
-      "--participant-avatar-fg": isDark.value
+      backgroundColor: selectedColor.background,
+      color: isDark.value
         ? selectedColor.darkForeground
         : selectedColor.foreground,
     };
@@ -696,8 +711,8 @@ function participantAvatarStyle(
 
   if (isOwner) {
     return {
-      "--participant-avatar-bg": "var(--sp-strong-soft)",
-      "--participant-avatar-fg": "var(--sp-strong)",
+      backgroundColor: "var(--sp-strong-soft)",
+      color: "var(--sp-strong)",
     };
   }
 
@@ -708,11 +723,18 @@ function participantAvatarStyle(
   }
   const colors = avatarColors[hash % avatarColors.length]!;
   return {
-    "--participant-avatar-bg": themedSurfaceColor(colors.background, 30),
-    "--participant-avatar-fg": isDark.value
+    backgroundColor: colors.background,
+    color: isDark.value
       ? colors.darkForeground
       : colors.foreground,
   };
+}
+function sameParticipantId(left?: unknown, right?: unknown) {
+  return (
+    typeof left === "string" &&
+    typeof right === "string" &&
+    left.localeCompare(right, undefined, { sensitivity: "accent" }) === 0
+  );
 }
 function themedSurfaceColor(color: string, darkOpacity: number) {
   if (!isDark.value) return color;
@@ -741,6 +763,9 @@ function storageKey(code: string) {
 }
 function identityStorageKey(code: string) {
   return `fuse:scrum-poker-identity:${code}`;
+}
+function apiUrl(path: string) {
+  return `${import.meta.env.VITE_API_BASE_URL ?? ""}${path}`;
 }
 function storedParticipantIdentity(code: string) {
   const stored = sessionStorage.getItem(identityStorageKey(code));
@@ -824,6 +849,7 @@ async function runSessionAction(
     session.value = result;
     room.value = result.room ?? null;
     participantName.value = displayName.value.trim();
+    selectedAvatarColor.value = currentAvatarColor() ?? selectedAvatarColor.value;
     selectedCard.value = currentCard();
     if (result.roomCode && result.participantToken)
       sessionStorage.setItem(
@@ -867,6 +893,13 @@ function currentCard() {
     (p) => p.id === session.value?.participantId,
   );
   return me?.card ?? null;
+}
+
+function currentAvatarColor() {
+  const me = session.value?.room?.participants?.find(
+    (p) => p.id === session.value?.participantId,
+  );
+  return me?.avatarColor;
 }
 
 async function refreshRoom() {
@@ -1086,7 +1119,9 @@ async function setAutoRevealOnServer(
   enabled: boolean,
 ): Promise<ScrumPokerRoomResponse> {
   const response = await fetch(
-    `/api/scrum-poker/rooms/${encodeURIComponent(roomCode)}/settings/auto-reveal`,
+    apiUrl(
+      `/api/scrum-poker/rooms/${encodeURIComponent(roomCode)}/settings/auto-reveal`,
+    ),
     {
       method: "POST",
       headers: {
@@ -1160,6 +1195,7 @@ async function loadStoredSession() {
     participantName.value = saved.participantName ?? "";
     displayName.value = participantName.value;
     room.value = session.value?.room ?? null;
+    selectedAvatarColor.value = currentAvatarColor() ?? selectedAvatarColor.value;
     startPolling();
   } catch {
     sessionStorage.removeItem(storageKey(code));
@@ -1171,7 +1207,9 @@ async function checkRoomAvailability() {
 
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL ?? ""}/api/scrum-poker/rooms/${encodeURIComponent(roomCodeFromUrl.value)}/availability`,
+      apiUrl(
+        `/api/scrum-poker/rooms/${encodeURIComponent(roomCodeFromUrl.value)}/availability`,
+      ),
     );
     if (response.ok) {
       const result = (await response.json()) as { exists?: boolean };
@@ -1394,13 +1432,12 @@ onBeforeUnmount(stopPolling);
 .avatar-picker__option {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border: 2px solid transparent;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
   transition:
     transform 0.16s ease,
     border-color 0.16s ease;
@@ -1615,12 +1652,12 @@ onBeforeUnmount(stopPolling);
 
 .participant-role-label--owner {
   color: var(--fuse-text-muted);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .participant-role-label--host {
   color: var(--fuse-text-muted);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .participant-status-slot {

@@ -35,7 +35,7 @@ public sealed class InMemoryScrumPokerStoreTests
     }
 
     [Fact]
-    public void EmptyRoom_IsRetainedAndCanBeRejoined()
+    public void EmptyRoom_ExpiresAfterFourHoursWithoutActivity()
     {
         var now = DateTime.UtcNow;
         var store = new InMemoryScrumPokerStore();
@@ -44,12 +44,24 @@ public sealed class InMemoryScrumPokerStoreTests
 
         Assert.Empty(empty.Participants);
         Assert.Null(empty.CurrentHostParticipantId);
-        Assert.True(store.RoomExists(owner.Room.RoomCode, now.AddDays(10)));
+        Assert.True(store.RoomExists(owner.Room.RoomCode, now.AddHours(4).AddSeconds(-1)));
+        Assert.False(store.RoomExists(owner.Room.RoomCode, now.AddHours(4).AddSeconds(1)));
 
-        var sarah = store.JoinRoom(owner.Room.RoomCode, "Sarah", now.AddDays(10).AddSeconds(1)).Value!;
-        Assert.Equal(sarah.Participant.Id, sarah.Room.CurrentHostParticipantId);
-        var ownerReturns = store.JoinRoom(owner.Room.RoomCode, "Damian", now.AddDays(10).AddSeconds(2), owner.Participant.Token).Value!;
-        Assert.Equal(owner.Participant.Id, ownerReturns.Room.CurrentHostParticipantId);
+        var rejoin = store.JoinRoom(owner.Room.RoomCode, "Sarah", now.AddHours(4).AddSeconds(2));
+        Assert.False(rejoin.IsSuccess);
+    }
+
+    [Fact]
+    public void ActiveParticipantActivityExtendsRoomLifetime()
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Damian", now).Value!;
+
+        Assert.True(store.RoomExists(owner.Room.RoomCode, now.AddHours(3).AddMinutes(59)));
+        Assert.True(store.GetRoom(owner.Room.RoomCode, owner.Participant.Token, now.AddHours(3).AddMinutes(59)).IsSuccess);
+        Assert.True(store.RoomExists(owner.Room.RoomCode, now.AddHours(7).AddMinutes(58)));
+        Assert.False(store.RoomExists(owner.Room.RoomCode, now.AddHours(7).AddMinutes(59).AddSeconds(1)));
     }
 
     [Fact]

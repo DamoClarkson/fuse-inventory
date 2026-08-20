@@ -16,7 +16,14 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
     private const string RoomCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private readonly object _roomsLock = new();
     private readonly Dictionary<string, RoomState> _rooms = new(StringComparer.OrdinalIgnoreCase);
-    public InMemoryScrumPokerStore(TimeSpan? roomLifetime = null) { }
+    private readonly TimeSpan _roomLifetime;
+
+    public InMemoryScrumPokerStore(TimeSpan? roomLifetime = null)
+    {
+        _roomLifetime = roomLifetime ?? TimeSpan.FromHours(4);
+        if (_roomLifetime <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(roomLifetime), "Room lifetime must be greater than zero.");
+    }
 
     public Result<ScrumPokerSession> CreateRoom(string displayName, DateTime utcNow, string? avatarColor = null)
     {
@@ -392,6 +399,16 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 
             lock (state.Gate)
             {
+                var lastParticipantActivity = state.Participants.Values
+                    .Select(participant => participant.LastSeenUtc)
+                    .DefaultIfEmpty(state.LastActivityUtc)
+                    .Max();
+                if (utcNow - lastParticipantActivity >= _roomLifetime)
+                {
+                    _rooms.Remove(state.RoomCode);
+                    return null;
+                }
+
                 return state;
             }
         }
