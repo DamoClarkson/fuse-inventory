@@ -105,6 +105,19 @@ public sealed class ScrumPokerController(
         return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.ParticipantToken)) : ToError<ScrumPokerRoomResponse>(result);
     }
 
+    [HttpPost("rooms/{roomCode}/settings/lock-votes-after-reveal")]
+    [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ScrumPokerRoomResponse>> SetLockVotesAfterReveal(string roomCode, [FromBody] ScrumPokerLockVotesAfterRevealRequest request)
+    {
+        if (!await IsEnabled())
+            return NotFound();
+
+        var result = store.SetLockVotesAfterReveal(roomCode, request.ParticipantToken, request.Enabled, DateTime.UtcNow);
+        return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.ParticipantToken)) : ToError<ScrumPokerRoomResponse>(result);
+    }
+
     [HttpPost("rooms/{roomCode}/reveal")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -197,6 +210,7 @@ public sealed class ScrumPokerController(
             room.Round,
             room.Phase,
             room.AutoReveal,
+            room.LockVotesAfterReveal,
             room.Revision,
             room.CreatedUtc,
             room.LastActivityUtc,
@@ -275,6 +289,8 @@ public sealed record ScrumPokerCardRequest(string ParticipantToken, ScrumPokerCa
 
 public sealed record ScrumPokerAutoRevealRequest(string ParticipantToken, bool Enabled);
 
+public sealed record ScrumPokerLockVotesAfterRevealRequest(string ParticipantToken, bool Enabled);
+
 public sealed record ScrumPokerSessionResponse(
     string RoomCode,
     Guid ParticipantId,
@@ -288,6 +304,7 @@ public sealed record ScrumPokerRoomResponse(
     int Round,
     ScrumPokerPhase Phase,
     bool AutoReveal,
+    bool LockVotesAfterReveal,
     long Revision,
     DateTime CreatedUtc,
     DateTime LastActivityUtc,

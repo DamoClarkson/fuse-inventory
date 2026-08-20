@@ -1,4 +1,5 @@
 using Fuse.Core.Areas.ScrumPoker;
+using Fuse.Core.Helpers;
 using Xunit;
 
 namespace Fuse.Tests.Areas.ScrumPoker;
@@ -89,5 +90,24 @@ public sealed class InMemoryScrumPokerStoreTests
 
         Assert.False(store.Reveal(owner.Room.RoomCode, owner.Participant.Token, DateTime.UtcNow.AddSeconds(3)).IsSuccess);
         Assert.True(store.Reveal(owner.Room.RoomCode, sarah.Participant.Token, DateTime.UtcNow.AddSeconds(4)).IsSuccess);
+    }
+
+    [Fact]
+    public void SelectCard_AfterReveal_IsAllowedUnlessVotesAreLocked()
+    {
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Damian", DateTime.UtcNow).Value!;
+        var now = DateTime.UtcNow.AddSeconds(1);
+
+        store.Reveal(owner.Room.RoomCode, owner.Participant.Token, now);
+
+        var changedVote = store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, ScrumPokerCard.Five, now.AddSeconds(1));
+        Assert.True(changedVote.IsSuccess);
+
+        store.SetLockVotesAfterReveal(owner.Room.RoomCode, owner.Participant.Token, true, now.AddSeconds(2));
+
+        var lockedVote = store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, ScrumPokerCard.Eight, now.AddSeconds(3));
+        Assert.False(lockedVote.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, lockedVote.ErrorType);
     }
 }

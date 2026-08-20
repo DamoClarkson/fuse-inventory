@@ -159,7 +159,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         var (state, participant) = stateResult.Value!;
         lock (state.Gate)
         {
-            if (state.Phase == ScrumPokerPhase.Revealed)
+            if (state.Phase == ScrumPokerPhase.Revealed && state.LockVotesAfterReveal)
                 return Result<ScrumPokerRoom>.Failure("The cards have already been revealed. Reset the room to vote again.", ErrorType.Conflict);
 
             state.Participants[participant.Id] = participant with { SelectedCard = card, LastSeenUtc = utcNow };
@@ -225,6 +225,31 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             if (state.Phase == ScrumPokerPhase.Voting)
             {
                 state.Phase = ScrumPokerPhase.Revealed;
+                state.Revision++;
+            }
+
+            return Result<ScrumPokerRoom>.Success(CreateRoomSnapshot(state));
+        }
+    }
+
+    public Result<ScrumPokerRoom> SetLockVotesAfterReveal(string roomCode, string participantToken, bool enabled, DateTime utcNow)
+    {
+        var stateResult = GetParticipantRoom(roomCode, participantToken, utcNow);
+        if (!stateResult.IsSuccess)
+            return Result<ScrumPokerRoom>.Failure(stateResult.Error!, stateResult);
+
+        var (state, participant) = stateResult.Value!;
+        lock (state.Gate)
+        {
+            if (participant.Id != state.CurrentHostId)
+                return Result<ScrumPokerRoom>.Failure("Only the current host can change room settings.", ErrorType.Unauthorized);
+
+            state.Participants[participant.Id] = participant with { LastSeenUtc = utcNow };
+            state.LastActivityUtc = utcNow;
+
+            if (state.LockVotesAfterReveal != enabled)
+            {
+                state.LockVotesAfterReveal = enabled;
                 state.Revision++;
             }
 
@@ -441,7 +466,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         new(CreateRoomSnapshot(state), participant ?? state.Participants.Values.First());
 
     private static ScrumPokerRoom CreateRoomSnapshot(RoomState state) =>
-        new(state.RoomCode, state.OwnerId, state.CurrentHostId, state.Round, state.Phase, state.AutoReveal, state.Revision, state.CreatedUtc, state.LastActivityUtc, state.Participants.Values.ToArray());
+        new(state.RoomCode, state.OwnerId, state.CurrentHostId, state.Round, state.Phase, state.AutoReveal, state.LockVotesAfterReveal, state.Revision, state.CreatedUtc, state.LastActivityUtc, state.Participants.Values.ToArray());
 
     private static Guid? SelectNextParticipant(RoomState state, Guid departingParticipantId) =>
         state.Participants.Keys.FirstOrDefault(id => id != departingParticipantId) is var next && next != Guid.Empty
@@ -488,6 +513,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         public int Round { get; set; } = 1;
         public ScrumPokerPhase Phase { get; set; } = ScrumPokerPhase.Voting;
         public bool AutoReveal { get; set; } = false;
+        public bool LockVotesAfterReveal { get; set; } = false;
         public long Revision { get; set; } = 1;
         public Dictionary<Guid, ScrumPokerParticipant> Participants { get; } = new() { [owner.Id] = owner };
         public Dictionary<Guid, ScrumPokerParticipant> KnownParticipants { get; } = new() { [owner.Id] = owner };

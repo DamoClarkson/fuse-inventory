@@ -25446,6 +25446,7 @@ export interface IScrumPokerRoomResponse {
   round?: number;
   phase?: ScrumPokerPhase;
   autoReveal?: boolean;
+  lockVotesAfterReveal?: boolean;
   revision?: number;
   average?: number | undefined;
   createdUtc?: Date;
@@ -25459,6 +25460,7 @@ export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
   round?: number;
   phase?: ScrumPokerPhase;
   autoReveal?: boolean;
+  lockVotesAfterReveal?: boolean;
   revision?: number;
   average?: number | undefined;
   createdUtc?: Date;
@@ -25475,6 +25477,7 @@ export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
       this.round = _data["round"];
       this.phase = _data["phase"];
       this.autoReveal = _data["autoReveal"];
+      this.lockVotesAfterReveal = _data["lockVotesAfterReveal"];
       this.revision = _data["revision"];
       this.average = _data["average"];
       this.createdUtc = _data["createdUtc"]
@@ -25503,6 +25506,7 @@ export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
     data["round"] = this.round;
     data["phase"] = this.phase;
     data["autoReveal"] = this.autoReveal;
+    data["lockVotesAfterReveal"] = this.lockVotesAfterReveal;
     data["revision"] = this.revision;
     data["average"] = this.average;
     data["createdUtc"] = this.createdUtc?.toISOString();

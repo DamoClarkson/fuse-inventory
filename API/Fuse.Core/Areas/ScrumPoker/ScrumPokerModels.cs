@@ -38,6 +38,7 @@ public sealed record ScrumPokerRoom(
     int Round,
     ScrumPokerPhase Phase,
     bool AutoReveal,
+    bool LockVotesAfterReveal,
     long Revision,
     DateTime CreatedUtc,
     DateTime LastActivityUtc,

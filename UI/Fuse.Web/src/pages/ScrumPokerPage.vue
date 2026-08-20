@@ -1,5 +1,12 @@
 <template>
-  <div :class="['scrum-poker-page', { 'scrum-poker-page--dark': isDark }]">
+  <div
+    :class="[
+      'scrum-poker-page',
+      {
+        'scrum-poker-page--dark': isDark,
+      },
+    ]"
+  >
     <header class="scrum-header">
       <div class="brand-lockup">
         <h1>Scrum poker</h1>
@@ -56,7 +63,7 @@
           "
         />
         <div class="avatar-picker q-mt-md">
-          <div class="avatar-picker__label">Avatar color</div>
+          <!-- <div class="avatar-picker__label">Avatar color</div>
           <div class="avatar-picker__options">
             <button
               v-for="color in avatarColors"
@@ -77,6 +84,32 @@
                 name="check"
                 size="16px"
                 :style="{ color: color.foreground }"
+              />
+            </button>
+          </div> -->
+          <div class="avatar-picker__label avatar-picker__label--images">
+            Avatar
+          </div>
+          <div class="avatar-picker__options avatar-picker__options--images">
+            <button
+              v-for="avatar in avatarImages"
+              :key="avatar.value"
+              type="button"
+              class="avatar-picker__option avatar-picker__option--image"
+              :class="{
+                'avatar-picker__option--selected':
+                  selectedAvatarColor === avatar.value,
+              }"
+              :style="avatarImageStyle(avatar)"
+              :aria-label="`Choose avatar ${avatar.index + 1}`"
+              :aria-pressed="selectedAvatarColor === avatar.value"
+              @click="selectedAvatarColor = avatar.value"
+            >
+              <q-icon
+                v-if="selectedAvatarColor === avatar.value"
+                name="check"
+                size="16px"
+                class="avatar-picker__image-check"
               />
             </button>
           </div>
@@ -196,7 +229,9 @@
                     'poker-card--selected': selectedCard === card.value,
                   }"
                   :disable="
-                    room?.phase === ScrumPokerPhase.Revealed || actionLoading
+                    (room?.phase === ScrumPokerPhase.Revealed &&
+                      lockVotesAfterReveal) ||
+                    actionLoading
                   "
                   @click="
                     selectCard(selectedCard === card.value ? null : card.value)
@@ -271,19 +306,25 @@
                     :style="
                       participantAvatarStyle(
                         participant,
-                        sameParticipantId(participant.id, room?.ownerParticipantId),
+                        sameParticipantId(
+                          participant.id,
+                          room?.ownerParticipantId,
+                        ),
                       )
                     "
-                    >{{
-                      participant.displayName?.charAt(0).toUpperCase()
-                    }}</q-avatar
-                  ></q-item-section
+                  >
+                    <template v-if="!participantHasImage(participant)">
+                      {{ participant.displayName?.charAt(0).toUpperCase() }}
+                    </template>
+                  </q-avatar></q-item-section
                 >
                 <q-item-section>
                   <q-item-label class="participant-name-label"
                     >{{ participant.displayName
                     }}<q-badge
-                      v-if="sameParticipantId(participant.id, currentParticipantId)"
+                      v-if="
+                        sameParticipantId(participant.id, currentParticipantId)
+                      "
                       outline
                       color="primary"
                       label="You"
@@ -386,38 +427,36 @@
               </q-item>
             </q-list>
             <div class="participant-summary-clip">
-              <Transition name="participant-summary">
-                <div v-if="readyCount > 0" class="participant-summary">
-                  <div>
-                    <div class="summary-label">Spread</div>
-                    <div class="summary-value">{{ spreadDisplay }}</div>
-                  </div>
-                  <div>
-                    <div class="summary-label">Overall</div>
-                    <div class="overall-score-slot">
-                      <div
-                        class="participant-score-flip overall-score-flip"
-                        :class="{
-                          'participant-score-flip--revealed':
-                            room?.phase === ScrumPokerPhase.Revealed,
-                        }"
+              <div class="participant-summary">
+                <div>
+                  <div class="summary-label">Spread</div>
+                  <div class="summary-value">{{ spreadDisplay }}</div>
+                </div>
+                <div>
+                  <div class="summary-label">Overall</div>
+                  <div class="overall-score-slot">
+                    <div
+                      class="participant-score-flip overall-score-flip"
+                      :class="{
+                        'participant-score-flip--revealed':
+                          room?.phase === ScrumPokerPhase.Revealed,
+                      }"
+                    >
+                      <span
+                        class="participant-score-face participant-score-face--question"
                       >
-                        <span
-                          class="participant-score-face participant-score-face--question"
-                        >
-                          ?
-                        </span>
-                        <span
-                          class="participant-card participant-score-face participant-score-face--value"
-                          :style="averageScoreStyle"
-                        >
-                          {{ averageDisplay }}
-                        </span>
-                      </div>
+                        ?
+                      </span>
+                      <span
+                        class="participant-card participant-score-face participant-score-face--value"
+                        :style="averageScoreStyle"
+                      >
+                        {{ averageDisplay }}
+                      </span>
                     </div>
                   </div>
                 </div>
-              </Transition>
+              </div>
             </div>
           </section>
         </main>
@@ -445,7 +484,7 @@
               <div class="side-room-code">Code: {{ session?.roomCode }}</div>
               <q-btn
                 outline
-                class="full-width q-mt-md"
+                class="full-width q-mt-md q-py-sm"
                 icon="link"
                 label="Copy invite link"
                 @click="copyInviteLink"
@@ -467,6 +506,15 @@
                   @update:model-value="onAutoRevealChange"
                 />
               </div>
+              <div class="settings-row">
+                <div class="settings-label">Lock votes after reveal</div>
+                <q-toggle
+                  :model-value="lockVotesAfterReveal"
+                  dense
+                  :disable="lockVotesAfterRevealSaving"
+                  @update:model-value="onLockVotesAfterRevealChange"
+                />
+              </div>
             </q-card-section>
           </q-card>
 
@@ -486,7 +534,7 @@
 
           <q-btn
             flat
-            class="leave-room-btn"
+            class="leave-room-btn q-py-sm"
             icon="logout"
             label="Leave room"
             @click="leaveRoom"
@@ -518,7 +566,7 @@ const fuseStore = useFuseStore();
 const client = useFuseClient();
 const $q = useQuasar();
 const displayName = ref("");
-const selectedAvatarColor = ref("#d8eaf8");
+const selectedAvatarColor = ref<string | null>(null);
 const joinCode = ref("");
 const session = ref<ScrumPokerSessionResponse | null>(null);
 const room = ref<ScrumPokerRoomResponse | null>(null);
@@ -527,6 +575,8 @@ const loading = ref(false);
 const actionLoading = ref(false);
 const autoReveal = ref(false);
 const autoRevealSaving = ref(false);
+const lockVotesAfterReveal = ref(false);
+const lockVotesAfterRevealSaving = ref(false);
 const roomName = ref("");
 const errorMessage = ref("");
 const roomEntryStatus = ref<"unknown" | "expired">("unknown");
@@ -545,24 +595,23 @@ const roomCodeFromUrl = computed(() =>
 const canSubmit = computed(
   () =>
     displayName.value.trim().length > 0 &&
-    displayName.value.trim().length <= 50,
+    displayName.value.trim().length <= 50 &&
+    selectedAvatarColor.value !== null,
 );
 const currentParticipantId = computed(() => session.value?.participantId);
-const isRoomOwner = computed(
-  () =>
-    sameParticipantId(
-      currentParticipantId.value,
-      room.value?.ownerParticipantId,
-    ),
+const isRoomOwner = computed(() =>
+  sameParticipantId(currentParticipantId.value, room.value?.ownerParticipantId),
 );
-const isCurrentHost = computed(
-  () =>
-    sameParticipantId(
-      currentParticipantId.value,
-      room.value?.currentHostParticipantId,
-    ),
+const isCurrentHost = computed(() =>
+  sameParticipantId(
+    currentParticipantId.value,
+    room.value?.currentHostParticipantId,
+  ),
 );
 const roomAutoReveal = computed(() => room.value?.autoReveal === true);
+const roomLockVotesAfterReveal = computed(
+  () => room.value?.lockVotesAfterReveal === true,
+);
 const readyCount = computed(
   () => (room.value?.participants ?? []).filter((p) => p.hasVoted).length,
 );
@@ -677,6 +726,31 @@ const avatarColors = [
   { background: "#f6edc8", foreground: "#78621c", darkForeground: "#fff0a8" },
   { background: "#d8f0df", foreground: "#2e7047", darkForeground: "#b9f2c8" },
 ];
+const avatarImages = Array.from({ length: 18 }, (_, index) => ({
+  value: `avatar-image-${index + 1}`,
+  index,
+}));
+const avatarImageRequestColors = [
+  "#1d4ed8",
+  "#2563eb",
+  "#3b82f6",
+  "#0f766e",
+  "#0d9488",
+  "#14b8a6",
+  "#15803d",
+  "#16a34a",
+  "#22c55e",
+  "#a16207",
+  "#ca8a04",
+  "#eab308",
+  "#c2410c",
+  "#ea580c",
+  "#f97316",
+  "#be123c",
+  "#e11d48",
+  "#f43f5e",
+];
+const avatarSheetUrl = "/avatarchars.png";
 
 function cardLabel(card: ScrumPokerCard) {
   return cards.find((option) => option.value === card)?.label ?? card;
@@ -696,14 +770,31 @@ function participantAvatarStyle(
   },
   isOwner = false,
 ) {
+  const selectedImage = avatarImages.find(
+    (avatar) =>
+      avatar.value === participant.avatarColor ||
+      avatarImageRequestColors[avatar.index]?.toLowerCase() ===
+        participant.avatarColor?.toLowerCase(),
+  );
+  if (selectedImage) return avatarImageStyle(selectedImage);
+
+  if (sameParticipantId(participant.id, currentParticipantId.value)) {
+    const currentImage = avatarImages.find(
+      (avatar) => avatar.value === selectedAvatarColor.value,
+    );
+    if (currentImage) return avatarImageStyle(currentImage);
+  }
+
   const selectedColor = avatarColors.find(
     (color) =>
       color.background.toLowerCase() === participant.avatarColor?.toLowerCase(),
   );
   if (selectedColor) {
     return {
-      backgroundColor: selectedColor.background,
-      color: isDark.value
+      "--participant-avatar-bg": avatarBackgroundColor(
+        selectedColor.background,
+      ),
+      "--participant-avatar-fg": isDark.value
         ? selectedColor.darkForeground
         : selectedColor.foreground,
     };
@@ -711,8 +802,8 @@ function participantAvatarStyle(
 
   if (isOwner) {
     return {
-      backgroundColor: "var(--sp-strong-soft)",
-      color: "var(--sp-strong)",
+      "--participant-avatar-bg": "var(--sp-strong-soft)",
+      "--participant-avatar-fg": "var(--sp-strong)",
     };
   }
 
@@ -723,11 +814,50 @@ function participantAvatarStyle(
   }
   const colors = avatarColors[hash % avatarColors.length]!;
   return {
-    backgroundColor: colors.background,
-    color: isDark.value
+    "--participant-avatar-bg": avatarBackgroundColor(colors.background),
+    "--participant-avatar-fg": isDark.value
       ? colors.darkForeground
       : colors.foreground,
   };
+}
+function avatarBackgroundColor(color: string) {
+  if (!isDark.value) return color;
+
+  const red = Number.parseInt(color.slice(1, 3), 16);
+  const green = Number.parseInt(color.slice(3, 5), 16);
+  const blue = Number.parseInt(color.slice(5, 7), 16);
+  return `rgba(${red}, ${green}, ${blue}, 0.3)`;
+}
+function participantHasImage(participant: {
+  id?: unknown;
+  avatarColor?: string | null;
+}) {
+  return (
+    avatarImages.some(
+      (avatar) =>
+        avatar.value === participant.avatarColor ||
+        avatarImageRequestColors[avatar.index]?.toLowerCase() ===
+          participant.avatarColor?.toLowerCase(),
+    ) ||
+    (sameParticipantId(participant.id, currentParticipantId.value) &&
+      avatarImages.some((avatar) => avatar.value === selectedAvatarColor.value))
+  );
+}
+function avatarImageStyle(avatar: (typeof avatarImages)[number]) {
+  const column = avatar.index % 6;
+  const row = Math.floor(avatar.index / 6);
+  return {
+    backgroundImage: `url("${avatarSheetUrl}")`,
+    backgroundColor:
+      avatarColors[avatar.index % avatarColors.length]!.background,
+    backgroundPosition: `${column * 20}% calc(${row * 50}% + 1px)`,
+    backgroundSize: "600% 300%",
+    backgroundRepeat: "no-repeat",
+  };
+}
+function avatarColorForRequest(selection: string) {
+  const image = avatarImages.find((avatar) => avatar.value === selection);
+  return image ? avatarImageRequestColors[image.index]! : selection;
 }
 function sameParticipantId(left?: unknown, right?: unknown) {
   return (
@@ -807,7 +937,7 @@ async function createRoom() {
   await runSessionAction(() =>
     client.scrumPokerRoomsPOST({
       displayName: displayName.value.trim(),
-      avatarColor: selectedAvatarColor.value,
+      avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
     } as any),
   );
 }
@@ -819,7 +949,7 @@ async function joinRoom() {
     client.scrumPokerRoomsJoin(code, {
       displayName: displayName.value.trim(),
       participantToken: storedParticipantToken(code),
-      avatarColor: selectedAvatarColor.value,
+      avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
     } as any),
   );
 }
@@ -831,7 +961,7 @@ async function enterRoom() {
       client.scrumPokerRoomsEnter(roomCodeFromUrl.value, {
         displayName: displayName.value.trim(),
         participantToken: storedParticipantToken(roomCodeFromUrl.value),
-        avatarColor: selectedAvatarColor.value,
+        avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
       } as any),
     true,
   );
@@ -849,7 +979,12 @@ async function runSessionAction(
     session.value = result;
     room.value = result.room ?? null;
     participantName.value = displayName.value.trim();
-    selectedAvatarColor.value = currentAvatarColor() ?? selectedAvatarColor.value;
+    if (
+      !avatarImages.some((avatar) => avatar.value === selectedAvatarColor.value)
+    ) {
+      selectedAvatarColor.value =
+        currentAvatarColor() ?? selectedAvatarColor.value;
+    }
     selectedCard.value = currentCard();
     if (result.roomCode && result.participantToken)
       sessionStorage.setItem(
@@ -1113,6 +1248,40 @@ function onAutoRevealChange(enabled: boolean) {
   void updateAutoReveal(enabled);
 }
 
+async function updateLockVotesAfterReveal(enabled: boolean) {
+  if (
+    !session.value?.roomCode ||
+    !session.value.participantToken ||
+    lockVotesAfterRevealSaving.value
+  )
+    return;
+
+  if (enabled === roomLockVotesAfterReveal.value) return;
+
+  lockVotesAfterRevealSaving.value = true;
+  errorMessage.value = "";
+  try {
+    room.value = await setLockVotesAfterRevealOnServer(
+      session.value.roomCode,
+      session.value.participantToken,
+      enabled,
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to update vote lock setting.";
+    errorMessage.value = message;
+    Notify.create({ type: "negative", message });
+  } finally {
+    lockVotesAfterRevealSaving.value = false;
+  }
+}
+
+function onLockVotesAfterRevealChange(enabled: boolean) {
+  void updateLockVotesAfterReveal(enabled);
+}
+
 async function setAutoRevealOnServer(
   roomCode: string,
   participantToken: string,
@@ -1133,6 +1302,40 @@ async function setAutoRevealOnServer(
 
   if (!response.ok) {
     let message = "Unable to update auto-reveal setting.";
+    try {
+      const payload = await response.json();
+      if (payload?.error) message = payload.error;
+    } catch {
+      // Keep the generic message when the error payload is not JSON.
+    }
+
+    throw new Error(message);
+  }
+
+  const payload = await response.json();
+  return ScrumPokerRoomResponse.fromJS(payload);
+}
+
+async function setLockVotesAfterRevealOnServer(
+  roomCode: string,
+  participantToken: string,
+  enabled: boolean,
+): Promise<ScrumPokerRoomResponse> {
+  const response = await fetch(
+    apiUrl(
+      `/api/scrum-poker/rooms/${encodeURIComponent(roomCode)}/settings/lock-votes-after-reveal`,
+    ),
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ participantToken, enabled }),
+    },
+  );
+
+  if (!response.ok) {
+    let message = "Unable to update vote lock setting.";
     try {
       const payload = await response.json();
       if (payload?.error) message = payload.error;
@@ -1195,7 +1398,8 @@ async function loadStoredSession() {
     participantName.value = saved.participantName ?? "";
     displayName.value = participantName.value;
     room.value = session.value?.room ?? null;
-    selectedAvatarColor.value = currentAvatarColor() ?? selectedAvatarColor.value;
+    selectedAvatarColor.value =
+      currentAvatarColor() ?? selectedAvatarColor.value;
     startPolling();
   } catch {
     sessionStorage.removeItem(storageKey(code));
@@ -1241,6 +1445,13 @@ watch(
   },
   { immediate: true },
 );
+watch(
+  roomLockVotesAfterReveal,
+  (enabled) => {
+    lockVotesAfterReveal.value = enabled;
+  },
+  { immediate: true },
+);
 onBeforeUnmount(stopPolling);
 </script>
 
@@ -1257,7 +1468,9 @@ onBeforeUnmount(stopPolling);
   --sp-strong-soft: color-mix(in srgb, var(--q-primary) 16%, var(--sp-surface));
   --sp-shadow: var(--fuse-shadow-1);
 
-  min-height: 100%;
+  box-sizing: border-box;
+  min-height: 100vh;
+  width: 100%;
   padding: 1.7rem clamp(0.8rem, 3vw, 2.2rem);
   background: var(--sp-page-bg);
   color: var(--sp-text);
@@ -1374,7 +1587,7 @@ onBeforeUnmount(stopPolling);
 }
 
 .join-card {
-  width: min(100%, 620px);
+  width: min(100%, 710px);
   margin: 2.5rem auto;
   border-color: var(--sp-border);
   border-radius: 18px;
@@ -1427,6 +1640,16 @@ onBeforeUnmount(stopPolling);
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.avatar-picker__label--images {
+  margin-top: 0.9rem;
+}
+
+.avatar-picker__options--images {
+  gap: 0.65rem;
 }
 
 .avatar-picker__option {
@@ -1450,6 +1673,23 @@ onBeforeUnmount(stopPolling);
 .avatar-picker__option--selected {
   border-color: var(--sp-text);
   transform: scale(1.12);
+}
+
+.avatar-picker__option--image {
+  width: 62px;
+  height: 62px;
+  overflow: hidden;
+  border-width: 3px;
+  background-color: var(--sp-soft);
+  background-clip: padding-box;
+}
+
+.avatar-picker__image-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(20, 34, 55, 0.72);
 }
 
 .join-actions {
@@ -1612,7 +1852,7 @@ onBeforeUnmount(stopPolling);
 
 .participant-list .q-item {
   min-height: 56px;
-  padding: 0.35rem 0.15rem;
+  padding: 0.6rem 0.15rem;
   border-bottom: 1px solid var(--sp-border);
 }
 
@@ -1621,8 +1861,10 @@ onBeforeUnmount(stopPolling);
 }
 
 .participant-avatar {
-  background: var(--participant-avatar-bg);
-  color: var(--participant-avatar-fg);
+  width: 48px;
+  height: 48px;
+  background: var(--participant-avatar-bg, var(--sp-strong-soft));
+  color: var(--participant-avatar-fg, var(--sp-strong));
   font-weight: 700;
 }
 
@@ -1648,6 +1890,7 @@ onBeforeUnmount(stopPolling);
 
 .participant-name-label {
   font-weight: 500;
+  font-size: 1rem;
 }
 
 .participant-role-label--owner {
@@ -1792,7 +2035,8 @@ onBeforeUnmount(stopPolling);
 }
 
 .participant-remove-btn {
-  color: #aab4c2;
+  color: #d3d9e1;
+  margin-right: 2rem;
 }
 
 .participant-remove-btn:hover {
@@ -1801,8 +2045,7 @@ onBeforeUnmount(stopPolling);
 
 .participant-summary {
   border-top: 1px solid var(--sp-border);
-  margin-top: 0.2rem;
-  padding: 0.8rem 0.25rem 0.1rem;
+  padding: 1rem 0.25rem 0.1rem;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
@@ -1860,8 +2103,7 @@ onBeforeUnmount(stopPolling);
 }
 
 .overall-score-slot > .participant-score-enter-active {
-  animation: participant-score-enter 0.28s cubic-bezier(0.2, 0.75, 0.25, 1)
-    both;
+  animation: participant-score-enter 0.28s cubic-bezier(0.2, 0.75, 0.25, 1) both;
 }
 
 .overall-score-slot > .participant-score-leave-active {
@@ -1914,7 +2156,8 @@ onBeforeUnmount(stopPolling);
 }
 
 .settings-row {
-  margin-top: 0.4rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.3rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1931,7 +2174,8 @@ onBeforeUnmount(stopPolling);
   align-items: center;
   gap: 0.6rem;
   color: var(--sp-muted);
-  margin-top: 0.55rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.3rem;
   font-size: 0.86rem;
 }
 
