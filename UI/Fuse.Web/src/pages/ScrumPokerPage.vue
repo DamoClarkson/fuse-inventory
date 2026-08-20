@@ -898,20 +898,29 @@ function apiUrl(path: string) {
   return `${import.meta.env.VITE_API_BASE_URL ?? ""}${path}`;
 }
 function storedParticipantIdentity(code: string) {
-  const stored = sessionStorage.getItem(identityStorageKey(code));
+  const key = identityStorageKey(code);
+  const stored = localStorage.getItem(key) ?? sessionStorage.getItem(key);
   if (!stored) return undefined;
   try {
-    return JSON.parse(stored) as {
+    const identity = JSON.parse(stored) as {
       participantId?: string;
       participantToken?: string;
+      displayName?: string;
     };
+    localStorage.setItem(key, JSON.stringify(identity));
+    return identity;
   } catch {
-    sessionStorage.removeItem(identityStorageKey(code));
+    localStorage.removeItem(key);
     return undefined;
   }
 }
-function storedParticipantToken(code: string) {
-  return storedParticipantIdentity(code)?.participantToken;
+function storedParticipantToken(code: string, displayName: string) {
+  const identity = storedParticipantIdentity(code);
+  return identity?.displayName?.localeCompare(displayName, undefined, {
+    sensitivity: "accent",
+  }) === 0
+    ? identity.participantToken
+    : undefined;
 }
 
 function editRoomName() {
@@ -948,7 +957,7 @@ async function joinRoom() {
   await runSessionAction(() =>
     client.scrumPokerRoomsJoin(code, {
       displayName: displayName.value.trim(),
-      participantToken: storedParticipantToken(code),
+      participantToken: storedParticipantToken(code, displayName.value.trim()),
       avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
     } as any),
   );
@@ -960,7 +969,10 @@ async function enterRoom() {
     () =>
       client.scrumPokerRoomsEnter(roomCodeFromUrl.value, {
         displayName: displayName.value.trim(),
-        participantToken: storedParticipantToken(roomCodeFromUrl.value),
+        participantToken: storedParticipantToken(
+          roomCodeFromUrl.value,
+          displayName.value.trim(),
+        ),
         avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
       } as any),
     true,
@@ -987,11 +999,12 @@ async function runSessionAction(
     }
     selectedCard.value = currentCard();
     if (result.roomCode && result.participantToken)
-      sessionStorage.setItem(
+      localStorage.setItem(
         identityStorageKey(result.roomCode),
         JSON.stringify({
           participantId: result.participantId,
           participantToken: result.participantToken,
+          displayName: participantName.value,
         }),
       );
     if (result.roomCode && result.participantToken)
@@ -1082,7 +1095,7 @@ async function refreshRoom() {
       const roomCode = session.value.roomCode!;
       stopPolling();
       sessionStorage.removeItem(storageKey(roomCode));
-      sessionStorage.removeItem(identityStorageKey(roomCode));
+      localStorage.removeItem(identityStorageKey(roomCode));
       session.value = null;
       room.value = null;
       selectedCard.value = null;
@@ -1115,6 +1128,23 @@ function stopPolling() {
     clearInterval(pollTimer);
     pollTimer = undefined;
   }
+}
+
+function leaveRoomOnPageExit() {
+  const currentSession = session.value;
+  if (!currentSession?.roomCode || !currentSession.participantToken) return;
+
+  const body = new Blob(
+    [JSON.stringify({ participantToken: currentSession.participantToken })],
+    { type: "application/json" },
+  );
+  const sent = navigator.sendBeacon(
+    apiUrl(
+      `/api/scrum-poker/rooms/${encodeURIComponent(currentSession.roomCode)}/leave`,
+    ),
+    body,
+  );
+  if (sent) sessionStorage.removeItem(storageKey(currentSession.roomCode));
 }
 
 async function selectCard(card: ScrumPokerCard | null) {
@@ -1355,11 +1385,12 @@ async function leaveRoom() {
   if (currentSession?.roomCode) joinCode.value = currentSession.roomCode;
   stopPolling();
   if (currentSession?.roomCode && currentSession.participantToken) {
-    sessionStorage.setItem(
+    localStorage.setItem(
       identityStorageKey(currentSession.roomCode),
       JSON.stringify({
         participantId: currentSession.participantId,
         participantToken: currentSession.participantToken,
+        displayName: participantName.value || displayName.value.trim(),
       }),
     );
     try {
@@ -1452,7 +1483,11 @@ watch(
   },
   { immediate: true },
 );
-onBeforeUnmount(stopPolling);
+onMounted(() => window.addEventListener("pagehide", leaveRoomOnPageExit));
+onBeforeUnmount(() => {
+  window.removeEventListener("pagehide", leaveRoomOnPageExit);
+  stopPolling();
+});
 </script>
 
 <style scoped>
