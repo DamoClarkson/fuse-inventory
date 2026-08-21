@@ -165,16 +165,19 @@ public sealed class ScrumPokerStoreTests
     }
 
     [Fact]
-    public void RoomsRemainJoinableAndReadableAfterInactivity()
+    public void RoomsExpireAtTheConfiguredInactivityBoundary()
     {
         var store = new InMemoryScrumPokerStore(TimeSpan.FromMinutes(10));
         var owner = store.CreateRoom("Alice", Start).Value!;
 
-        var join = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddMinutes(10));
-        var read = store.GetRoom(owner.Room.RoomCode, join.Value!.Participant.Token, Start.AddMinutes(10));
+        var joinBeforeExpiry = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddMinutes(10).AddTicks(-1));
+        var readBeforeExpiry = store.GetRoom(owner.Room.RoomCode, joinBeforeExpiry.Value!.Participant.Token, Start.AddMinutes(20).AddTicks(-2));
+        var readAtExpiry = store.GetRoom(owner.Room.RoomCode, joinBeforeExpiry.Value.Participant.Token, Start.AddMinutes(30).AddTicks(-2));
 
-        Assert.True(join.IsSuccess);
-        Assert.True(read.IsSuccess);
+        Assert.True(joinBeforeExpiry.IsSuccess);
+        Assert.True(readBeforeExpiry.IsSuccess);
+        Assert.False(readAtExpiry.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, readAtExpiry.ErrorType);
     }
 
     [Fact]
