@@ -150,25 +150,27 @@
         >
       </q-card-section>
       <q-card-actions class="join-actions">
-        <q-btn
-          v-if="roomCodeFromUrl && roomEntryStatus !== 'expired'"
-          unelevated
-          color="primary"
-          label="Enter room"
-          :disable="!canSubmit"
-          :loading="loading"
-          @click="enterRoom"
-        />
-        <q-btn
-          v-if="roomCodeFromUrl && roomEntryStatus === 'expired'"
-          unelevated
-          color="primary"
-          label="Create new room"
-          :disable="!canSubmit"
-          :loading="loading"
-          @click="createRoom"
-        />
-        <template v-else-if="!roomCodeFromUrl">
+        <template v-if="roomCodeFromUrl">
+          <q-btn
+            v-if="roomEntryStatus !== 'expired'"
+            unelevated
+            color="primary"
+            label="Enter room"
+            :disable="!canSubmit"
+            :loading="loading"
+            @click="enterRoom"
+          />
+          <q-btn
+            v-else
+            unelevated
+            color="primary"
+            label="Create new room"
+            :disable="!canSubmit"
+            :loading="loading"
+            @click="createRoom"
+          />
+        </template>
+        <template v-else>
           <q-btn
             flat
             color="grey-8"
@@ -730,6 +732,7 @@ const avatarImages = Array.from({ length: 18 }, (_, index) => ({
   value: `avatar-image-${index + 1}`,
   index,
 }));
+const avatarSheetUrl = "/avatar-sprite.png";
 const avatarImageRequestColors = [
   "#1d4ed8",
   "#2563eb",
@@ -750,8 +753,6 @@ const avatarImageRequestColors = [
   "#e11d48",
   "#f43f5e",
 ];
-const avatarSheetUrl = "/avatarchars.png";
-
 function cardLabel(card: ScrumPokerCard) {
   return cards.find((option) => option.value === card)?.label ?? card;
 }
@@ -776,13 +777,13 @@ function participantAvatarStyle(
       avatarImageRequestColors[avatar.index]?.toLowerCase() ===
         participant.avatarColor?.toLowerCase(),
   );
-  if (selectedImage) return avatarImageStyle(selectedImage);
+  if (selectedImage) return avatarImageStyle(selectedImage, 50);
 
   if (sameParticipantId(participant.id, currentParticipantId.value)) {
     const currentImage = avatarImages.find(
       (avatar) => avatar.value === selectedAvatarColor.value,
     );
-    if (currentImage) return avatarImageStyle(currentImage);
+    if (currentImage) return avatarImageStyle(currentImage, 50);
   }
 
   const selectedColor = avatarColors.find(
@@ -843,15 +844,18 @@ function participantHasImage(participant: {
       avatarImages.some((avatar) => avatar.value === selectedAvatarColor.value))
   );
 }
-function avatarImageStyle(avatar: (typeof avatarImages)[number]) {
+function avatarImageStyle(
+  avatar: (typeof avatarImages)[number],
+  displaySize = 60,
+) {
   const column = avatar.index % 6;
   const row = Math.floor(avatar.index / 6);
   return {
     backgroundImage: `url("${avatarSheetUrl}")`,
     backgroundColor:
       avatarColors[avatar.index % avatarColors.length]!.background,
-    backgroundPosition: `${column * 20}% calc(${row * 50}% + 1px)`,
-    backgroundSize: "600% 300%",
+    backgroundPosition: `-${column * displaySize}px -${row * displaySize}px`,
+    backgroundSize: `${displaySize * 6}px ${displaySize * 3}px`,
     backgroundRepeat: "no-repeat",
   };
 }
@@ -1684,7 +1688,7 @@ onBeforeUnmount(() => {
 }
 
 .avatar-picker__options--images {
-  gap: 0.65rem;
+  gap: 0.52rem;
 }
 
 .avatar-picker__option {
@@ -1711,8 +1715,8 @@ onBeforeUnmount(() => {
 }
 
 .avatar-picker__option--image {
-  width: 62px;
-  height: 62px;
+  width: 64px;
+  height: 64px;
   overflow: hidden;
   border-width: 3px;
   background-color: var(--sp-soft);
@@ -1724,7 +1728,7 @@ onBeforeUnmount(() => {
   height: 20px;
   border-radius: 50%;
   color: #fff;
-  background: rgba(20, 34, 55, 0.72);
+  background: rgba(20, 34, 55, 0.466);
 }
 
 .join-actions {
