@@ -27,14 +27,18 @@ public sealed record ScrumPokerParticipant(
     Guid Id,
     string DisplayName,
     string Token,
+    string? AvatarColor,
     ScrumPokerCard? SelectedCard,
     DateTime LastSeenUtc);
 
 public sealed record ScrumPokerRoom(
     string RoomCode,
+    Guid OwnerParticipantId,
+    Guid? CurrentHostParticipantId,
     int Round,
     ScrumPokerPhase Phase,
     bool AutoReveal,
+    bool LockVotesAfterReveal,
     long Revision,
     DateTime CreatedUtc,
     DateTime LastActivityUtc,

@@ -8,7 +8,7 @@
         </q-toolbar-title>
 
         <q-spacer />
-        
+
         <InventoryNavigator
           v-if="showInventoryNavigator"
           :kind="navigatorKind"
@@ -521,7 +521,7 @@ watch(healthMonitoringEnabled, enabled => {
   if (!enabled && route.name === 'healthOverview') void router.replace({ name: 'home' })
 })
 
-const showInventoryNavigator = computed(() => 
+const showInventoryNavigator = computed(() =>
   route.name === 'instanceEdit' || route.name === 'accountEdit'
 )
 
