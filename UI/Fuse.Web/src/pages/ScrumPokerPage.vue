@@ -34,6 +34,13 @@
       </div>
     </header>
 
+    <PlayerEntranceSplash
+      :avatar="selectedAvatarColor"
+      :player-name="participantName"
+      :show="showEntranceSplash"
+      @complete="showEntranceSplash = false"
+    />
+
     <q-banner v-if="!featureEnabled" rounded class="banner-muted q-mb-lg">
       Scrum Poker is currently disabled in Fuse Settings.
     </q-banner>
@@ -92,7 +99,7 @@
           </div>
           <div class="avatar-picker__options avatar-picker__options--images">
             <button
-              v-for="avatar in avatarImages"
+              v-for="avatar in scrumPokerAvatarImages"
               :key="avatar.value"
               type="button"
               class="avatar-picker__option avatar-picker__option--image"
@@ -100,7 +107,7 @@
                 'avatar-picker__option--selected':
                   selectedAvatarColor === avatar.value,
               }"
-              :style="avatarImageStyle(avatar)"
+              :style="scrumPokerAvatarImageStyle(avatar)"
               :aria-label="`Choose avatar ${avatar.index + 1}`"
               :aria-pressed="selectedAvatarColor === avatar.value"
               @click="selectedAvatarColor = avatar.value"
@@ -424,6 +431,11 @@
                         </span>
                       </span>
                     </span>
+                    <span
+                      v-else
+                      class="participant-score-placeholder"
+                      aria-hidden="true"
+                    ></span>
                   </Transition>
                 </q-item-section>
               </q-item>
@@ -548,7 +560,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Dialog, Notify, useQuasar } from "quasar";
 import {
@@ -561,6 +580,12 @@ import {
 } from "api/client";
 import { useFuseStore } from "../stores/FuseStore";
 import { useFuseClient } from "../composables/useFuseClient";
+import PlayerEntranceSplash from "../components/PlayerEntranceSplash.vue";
+import {
+  scrumPokerAvatarImageStyle,
+  scrumPokerAvatarImages,
+  scrumPokerAvatarRequestColors,
+} from "../utils/scrumPokerAvatar";
 
 const route = useRoute();
 const router = useRouter();
@@ -573,6 +598,7 @@ const joinCode = ref("");
 const session = ref<ScrumPokerSessionResponse | null>(null);
 const room = ref<ScrumPokerRoomResponse | null>(null);
 const participantName = ref("");
+const showEntranceSplash = ref(false);
 const loading = ref(false);
 const actionLoading = ref(false);
 const autoReveal = ref(false);
@@ -728,31 +754,6 @@ const avatarColors = [
   { background: "#f6edc8", foreground: "#78621c", darkForeground: "#fff0a8" },
   { background: "#d8f0df", foreground: "#2e7047", darkForeground: "#b9f2c8" },
 ];
-const avatarImages = Array.from({ length: 18 }, (_, index) => ({
-  value: `avatar-image-${index + 1}`,
-  index,
-}));
-const avatarSheetUrl = "/avatar-sprite.png";
-const avatarImageRequestColors = [
-  "#1d4ed8",
-  "#2563eb",
-  "#3b82f6",
-  "#0f766e",
-  "#0d9488",
-  "#14b8a6",
-  "#15803d",
-  "#16a34a",
-  "#22c55e",
-  "#a16207",
-  "#ca8a04",
-  "#eab308",
-  "#c2410c",
-  "#ea580c",
-  "#f97316",
-  "#be123c",
-  "#e11d48",
-  "#f43f5e",
-];
 function cardLabel(card: ScrumPokerCard) {
   return cards.find((option) => option.value === card)?.label ?? card;
 }
@@ -771,19 +772,19 @@ function participantAvatarStyle(
   },
   isOwner = false,
 ) {
-  const selectedImage = avatarImages.find(
+  const selectedImage = scrumPokerAvatarImages.find(
     (avatar) =>
       avatar.value === participant.avatarColor ||
-      avatarImageRequestColors[avatar.index]?.toLowerCase() ===
+      scrumPokerAvatarRequestColors[avatar.index]?.toLowerCase() ===
         participant.avatarColor?.toLowerCase(),
   );
-  if (selectedImage) return avatarImageStyle(selectedImage, 50);
+  if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage, 50);
 
   if (sameParticipantId(participant.id, currentParticipantId.value)) {
-    const currentImage = avatarImages.find(
+    const currentImage = scrumPokerAvatarImages.find(
       (avatar) => avatar.value === selectedAvatarColor.value,
     );
-    if (currentImage) return avatarImageStyle(currentImage, 50);
+    if (currentImage) return scrumPokerAvatarImageStyle(currentImage, 50);
   }
 
   const selectedColor = avatarColors.find(
@@ -834,34 +835,23 @@ function participantHasImage(participant: {
   avatarColor?: string | null;
 }) {
   return (
-    avatarImages.some(
+    scrumPokerAvatarImages.some(
       (avatar) =>
         avatar.value === participant.avatarColor ||
-        avatarImageRequestColors[avatar.index]?.toLowerCase() ===
+        scrumPokerAvatarRequestColors[avatar.index]?.toLowerCase() ===
           participant.avatarColor?.toLowerCase(),
     ) ||
     (sameParticipantId(participant.id, currentParticipantId.value) &&
-      avatarImages.some((avatar) => avatar.value === selectedAvatarColor.value))
+      scrumPokerAvatarImages.some(
+        (avatar) => avatar.value === selectedAvatarColor.value,
+      ))
   );
 }
-function avatarImageStyle(
-  avatar: (typeof avatarImages)[number],
-  displaySize = 60,
-) {
-  const column = avatar.index % 6;
-  const row = Math.floor(avatar.index / 6);
-  return {
-    backgroundImage: `url("${avatarSheetUrl}")`,
-    backgroundColor:
-      avatarColors[avatar.index % avatarColors.length]!.background,
-    backgroundPosition: `-${column * displaySize}px -${row * displaySize}px`,
-    backgroundSize: `${displaySize * 6}px ${displaySize * 3}px`,
-    backgroundRepeat: "no-repeat",
-  };
-}
 function avatarColorForRequest(selection: string) {
-  const image = avatarImages.find((avatar) => avatar.value === selection);
-  return image ? avatarImageRequestColors[image.index]! : selection;
+  const image = scrumPokerAvatarImages.find(
+    (avatar) => avatar.value === selection,
+  );
+  return image ? scrumPokerAvatarRequestColors[image.index]! : selection;
 }
 function sameParticipantId(left?: unknown, right?: unknown) {
   return (
@@ -996,7 +986,9 @@ async function runSessionAction(
     room.value = result.room ?? null;
     participantName.value = displayName.value.trim();
     if (
-      !avatarImages.some((avatar) => avatar.value === selectedAvatarColor.value)
+      !scrumPokerAvatarImages.some(
+        (avatar) => avatar.value === selectedAvatarColor.value,
+      )
     ) {
       selectedAvatarColor.value =
         currentAvatarColor() ?? selectedAvatarColor.value;
@@ -1024,6 +1016,8 @@ async function runSessionAction(
       params: { roomCode: result.roomCode },
     });
     startPolling();
+    await nextTick();
+    showEntranceSplash.value = true;
   } catch (error) {
     if (
       enteringExistingRoom &&
@@ -1982,6 +1976,24 @@ onBeforeUnmount(() => {
   animation: participant-score-enter 0.28s cubic-bezier(0.2, 0.75, 0.25, 1) both;
 }
 
+.participant-score-placeholder {
+  display: block;
+  width: 52px;
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid #d7dde6;
+  border-radius: 7px;
+  background: transparent;
+}
+
+.participant-score-placeholder.participant-score-leave-active {
+  animation: participant-score-placeholder-leave 0.28s ease-out both;
+}
+
+.scrum-poker-page--dark .participant-score-placeholder {
+  border-color: rgba(190, 202, 218, 0.32);
+}
+
 .participant-score-leave-active {
   transform-origin: center bottom;
   animation: participant-score-leave 0.28s cubic-bezier(0.4, 0, 1, 1) both;
@@ -1998,6 +2010,15 @@ onBeforeUnmount(() => {
   }
 }
 
+@keyframes participant-score-placeholder-leave {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes participant-score-enter {
   from {
     opacity: 0;
@@ -2010,8 +2031,24 @@ onBeforeUnmount(() => {
 }
 
 .participant-score-slot {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 52px;
+  width: 52px;
+  min-width: 52px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0;
   perspective: 500px;
   perspective-origin: center center;
+}
+
+.participant-score-slot > .participant-score-entry,
+.participant-score-slot > .participant-score-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 52px;
+  height: 36px;
 }
 
 .participant-score-flip {
