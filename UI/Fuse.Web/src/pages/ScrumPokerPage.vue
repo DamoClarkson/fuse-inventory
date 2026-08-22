@@ -431,12 +431,8 @@
                         </span>
                       </span>
                     </span>
-                    <span
-                      v-else
-                      class="participant-score-placeholder"
-                      aria-hidden="true"
-                    ></span>
                   </Transition>
+                  <div class="score-card-placeholder" aria-hidden="true"></div>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -1971,27 +1967,11 @@ onBeforeUnmount(() => {
 }
 
 .participant-score-entry {
+  position: relative;
+  z-index: 1;
   display: block;
   height: 36px;
   animation: participant-score-enter 0.28s cubic-bezier(0.2, 0.75, 0.25, 1) both;
-}
-
-.participant-score-placeholder {
-  display: block;
-  width: 52px;
-  height: 36px;
-  box-sizing: border-box;
-  border: 1px solid #d7dde6;
-  border-radius: 7px;
-  background: transparent;
-}
-
-.participant-score-placeholder.participant-score-leave-active {
-  animation: participant-score-placeholder-leave 0.28s ease-out both;
-}
-
-.scrum-poker-page--dark .participant-score-placeholder {
-  border-color: rgba(190, 202, 218, 0.32);
 }
 
 .participant-score-leave-active {
@@ -2010,15 +1990,6 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes participant-score-placeholder-leave {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
 @keyframes participant-score-enter {
   from {
     opacity: 0;
@@ -2031,24 +2002,8 @@ onBeforeUnmount(() => {
 }
 
 .participant-score-slot {
-  position: relative;
-  box-sizing: border-box;
-  flex: 0 0 52px;
-  width: 52px;
-  min-width: 52px;
-  min-height: 36px;
-  height: 36px;
-  padding: 0;
   perspective: 500px;
   perspective-origin: center center;
-}
-
-.participant-score-slot > .participant-score-entry,
-.participant-score-slot > .participant-score-placeholder {
-  position: absolute;
-  inset: 0;
-  width: 52px;
-  height: 36px;
 }
 
 .participant-score-flip {
@@ -2102,6 +2057,22 @@ onBeforeUnmount(() => {
   padding: 0;
   justify-content: center;
   align-items: center;
+}
+
+.participant-score-slot {
+  position: relative;
+  flex-direction: column;
+}
+
+.score-card-placeholder {
+  position: absolute;
+  z-index: 0;
+  box-sizing: border-box;
+  width: 52px;
+  height: 36px;
+  border: 1px solid #d9dee7;
+  border-radius: 7px;
+  background: transparent;
 }
 
 .participant-status-slot {
