@@ -6,11 +6,11 @@ permissions:
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -20,53 +20,55 @@ jobs:
   test:
     name: Run Tests with Coverage
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: |
-          10.0.x
-          8.0.x
-    
-    - name: Restore dependencies
-      run: dotnet restore
-    
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
-    
-    - name: Install ReportGenerator
-      run: dotnet tool install --global dotnet-reportgenerator-globaltool
-    
-    - name: Run tests with coverage
-      run: dotnet test --no-build --configuration Release --verbosity normal /p:AltCover=true /p:AltCoverAssemblyFilter="Fuse\.Tests"
-    
-    - name: Generate Cobertura Report
-      run: reportgenerator -reports:API/Fuse.Tests/coverage.xml -targetdir:coverage -reporttypes:Cobertura "-assemblyfilters:+Fuse.*"
-    
-    - name: Code Coverage Summary
-      uses: irongut/CodeCoverageSummary@v1.3.0
-      with:
-        filename: coverage/Cobertura.xml
-        badge: true
-        fail_below_min: false
-        format: markdown
-        hide_branch_rate: false
-        hide_complexity: true
-        indicators: true
-        output: both
-        thresholds: '60 80'
-    
-    - name: Add Coverage PR Comment
-      uses: marocchino/sticky-pull-request-comment@v2
-      if: github.event_name == 'pull_request'
-      with:
-        recreate: true
-        path: code-coverage-results.md
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+            8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Run tests with coverage
+        run: dotnet test --no-build --configuration Release --verbosity normal /p:AltCover=true /p:AltCoverAssemblyFilter="Fuse\.Tests"
+
+      - name: Generate Cobertura Report
+        run: reportgenerator -reports:API/Fuse.Tests/coverage.xml -targetdir:coverage -reporttypes:Cobertura "-assemblyfilters:+Fuse.*"
+
+      - name: Code Coverage Summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/Cobertura.xml
+          badge: true
+          fail_below_min: false
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: "60 80"
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          recreate: true
+          path: code-coverage-results.md
 
   build-and-push-pre-release-image:
     name: Build and Push Pre-release Image
@@ -76,65 +78,65 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Compute pre-release build metadata
-      id: buildmeta
-      shell: bash
-      run: |
-        BASE_TAG=$(git describe --tags --abbrev=0 --match "v*.*.*" 2>/dev/null || true)
-        BASE_VERSION="${BASE_TAG#v}"
-        if [[ -z "${BASE_VERSION}" ]]; then
-          BASE_VERSION="0.0.0"
-        fi
+      - name: Compute pre-release build metadata
+        id: buildmeta
+        shell: bash
+        run: |
+          BASE_TAG=$(git describe --tags --abbrev=0 --match "v*.*.*" 2>/dev/null || true)
+          BASE_VERSION="${BASE_TAG#v}"
+          if [[ -z "${BASE_VERSION}" ]]; then
+            BASE_VERSION="0.0.0"
+          fi
 
-        SHORT_SHA="${GITHUB_SHA::7}"
-        APP_VERSION="${BASE_VERSION}-pre.${SHORT_SHA}"
-        BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          SHORT_SHA="${GITHUB_SHA::7}"
+          APP_VERSION="${BASE_VERSION}-pre.${SHORT_SHA}"
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-        echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
-        echo "app_channel=pre-release" >> "$GITHUB_OUTPUT"
-        echo "git_commit_id=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-        echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-        echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
+          echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "app_channel=pre-release" >> "$GITHUB_OUTPUT"
+          echo "git_commit_id=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: linux/amd64,linux/arm64
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push Docker image (multi-arch)
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        platforms: linux/amd64,linux/arm64
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pre-release
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.buildmeta.outputs.git_commit_id_short }}
-        build-args: |
-          APP_VERSION=${{ steps.buildmeta.outputs.app_version }}
-          APP_CHANNEL=${{ steps.buildmeta.outputs.app_channel }}
-          GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
-          GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}
-          BUILD_DATE=${{ steps.buildmeta.outputs.build_date }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push Docker image (multi-arch)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pre-release
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.buildmeta.outputs.git_commit_id_short }}
+          build-args: |
+            APP_VERSION=${{ steps.buildmeta.outputs.app_version }}
+            APP_CHANNEL=${{ steps.buildmeta.outputs.app_channel }}
+            GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
+            GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}
+            BUILD_DATE=${{ steps.buildmeta.outputs.build_date }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   build-and-push-release-image:
     name: Build and Push Release Image
@@ -146,54 +148,54 @@ jobs:
       packages: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Compute release build metadata
-      id: buildmeta
-      shell: bash
-      run: |
-        VERSION_FROM_TAG="${GITHUB_REF_NAME#v}"
-        SHORT_SHA="${GITHUB_SHA::7}"
-        BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      - name: Compute release build metadata
+        id: buildmeta
+        shell: bash
+        run: |
+          VERSION_FROM_TAG="${GITHUB_REF_NAME#v}"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-        echo "app_version=${VERSION_FROM_TAG}" >> "$GITHUB_OUTPUT"
-        echo "app_channel=release" >> "$GITHUB_OUTPUT"
-        echo "git_commit_id=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-        echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-        echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
+          echo "app_version=${VERSION_FROM_TAG}" >> "$GITHUB_OUTPUT"
+          echo "app_channel=release" >> "$GITHUB_OUTPUT"
+          echo "git_commit_id=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: linux/amd64,linux/arm64
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push Docker image (multi-arch)
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        platforms: linux/amd64,linux/arm64
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.buildmeta.outputs.app_version }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-        build-args: |
-          APP_VERSION=${{ steps.buildmeta.outputs.app_version }}
-          APP_CHANNEL=${{ steps.buildmeta.outputs.app_channel }}
-          GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
-          GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}
-          BUILD_DATE=${{ steps.buildmeta.outputs.build_date }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push Docker image (multi-arch)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.buildmeta.outputs.app_version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            APP_VERSION=${{ steps.buildmeta.outputs.app_version }}
+            APP_CHANNEL=${{ steps.buildmeta.outputs.app_channel }}
+            GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
+            GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}
+            BUILD_DATE=${{ steps.buildmeta.outputs.build_date }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
