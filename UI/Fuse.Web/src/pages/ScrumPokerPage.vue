@@ -34,6 +34,13 @@
       </div>
     </header>
 
+    <PlayerEntranceSplash
+      :avatar="selectedAvatarColor"
+      :player-name="participantName"
+      :show="showEntranceSplash"
+      @complete="showEntranceSplash = false"
+    />
+
     <q-banner v-if="!featureEnabled" rounded class="banner-muted q-mb-lg">
       Scrum Poker is currently disabled in Fuse Settings.
     </q-banner>
@@ -63,36 +70,12 @@
           "
         />
         <div class="avatar-picker q-mt-md">
-          <!-- <div class="avatar-picker__label">Avatar color</div>
-          <div class="avatar-picker__options">
-            <button
-              v-for="color in avatarColors"
-              :key="color.background"
-              type="button"
-              class="avatar-picker__option"
-              :class="{
-                'avatar-picker__option--selected':
-                  selectedAvatarColor === color.background,
-              }"
-              :style="{ backgroundColor: color.background }"
-              :aria-label="`Choose avatar color ${color.background}`"
-              :aria-pressed="selectedAvatarColor === color.background"
-              @click="selectedAvatarColor = color.background"
-            >
-              <q-icon
-                v-if="selectedAvatarColor === color.background"
-                name="check"
-                size="16px"
-                :style="{ color: color.foreground }"
-              />
-            </button>
-          </div> -->
           <div class="avatar-picker__label avatar-picker__label--images">
             Avatar
           </div>
           <div class="avatar-picker__options avatar-picker__options--images">
             <button
-              v-for="avatar in avatarImages"
+              v-for="avatar in scrumPokerAvatarImages"
               :key="avatar.value"
               type="button"
               class="avatar-picker__option avatar-picker__option--image"
@@ -100,7 +83,7 @@
                 'avatar-picker__option--selected':
                   selectedAvatarColor === avatar.value,
               }"
-              :style="avatarImageStyle(avatar)"
+              :style="scrumPokerAvatarImageStyle(avatar)"
               :aria-label="`Choose avatar ${avatar.index + 1}`"
               :aria-pressed="selectedAvatarColor === avatar.value"
               @click="selectedAvatarColor = avatar.value"
@@ -305,15 +288,7 @@
                 <q-item-section avatar
                   ><q-avatar
                     class="participant-avatar"
-                    :style="
-                      participantAvatarStyle(
-                        participant,
-                        sameParticipantId(
-                          participant.id,
-                          room?.ownerParticipantId,
-                        ),
-                      )
-                    "
+                    :style="participantAvatarStyle(participant)"
                   >
                     <template v-if="!participantHasImage(participant)">
                       {{ participant.displayName?.charAt(0).toUpperCase() }}
@@ -425,6 +400,7 @@
                       </span>
                     </span>
                   </Transition>
+                  <div class="score-card-placeholder" aria-hidden="true"></div>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -548,7 +524,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Dialog, Notify, useQuasar } from "quasar";
 import {
@@ -561,6 +544,11 @@ import {
 } from "api/client";
 import { useFuseStore } from "../stores/FuseStore";
 import { useFuseClient } from "../composables/useFuseClient";
+import PlayerEntranceSplash from "../components/PlayerEntranceSplash.vue";
+import {
+  scrumPokerAvatarImageStyle,
+  scrumPokerAvatarImages,
+} from "../utils/scrumPokerAvatar";
 
 const route = useRoute();
 const router = useRouter();
@@ -573,6 +561,7 @@ const joinCode = ref("");
 const session = ref<ScrumPokerSessionResponse | null>(null);
 const room = ref<ScrumPokerRoomResponse | null>(null);
 const participantName = ref("");
+const showEntranceSplash = ref(false);
 const loading = ref(false);
 const actionLoading = ref(false);
 const autoReveal = ref(false);
@@ -720,39 +709,6 @@ const averageHeatColors = [
     darkForeground: "#fff5f2",
   },
 ];
-const avatarColors = [
-  { background: "#d8eaf8", foreground: "#28618b", darkForeground: "#bfe3ff" },
-  { background: "#f9d8e5", foreground: "#8d3156", darkForeground: "#ffd0e1" },
-  { background: "#f8dfc2", foreground: "#8a5422", darkForeground: "#ffd29c" },
-  { background: "#e8ddf5", foreground: "#65438c", darkForeground: "#e4caff" },
-  { background: "#f6edc8", foreground: "#78621c", darkForeground: "#fff0a8" },
-  { background: "#d8f0df", foreground: "#2e7047", darkForeground: "#b9f2c8" },
-];
-const avatarImages = Array.from({ length: 18 }, (_, index) => ({
-  value: `avatar-image-${index + 1}`,
-  index,
-}));
-const avatarSheetUrl = "/avatar-sprite.png";
-const avatarImageRequestColors = [
-  "#1d4ed8",
-  "#2563eb",
-  "#3b82f6",
-  "#0f766e",
-  "#0d9488",
-  "#14b8a6",
-  "#15803d",
-  "#16a34a",
-  "#22c55e",
-  "#a16207",
-  "#ca8a04",
-  "#eab308",
-  "#c2410c",
-  "#ea580c",
-  "#f97316",
-  "#be123c",
-  "#e11d48",
-  "#f43f5e",
-];
 function cardLabel(card: ScrumPokerCard) {
   return cards.find((option) => option.value === card)?.label ?? card;
 }
@@ -763,105 +719,41 @@ function nearestDeckValue(average: number) {
     return distance <= closestDistance ? value : closest;
   });
 }
-function participantAvatarStyle(
-  participant: {
-    id?: unknown;
-    displayName?: string | null;
-    avatarColor?: string | null;
-  },
-  isOwner = false,
-) {
-  const selectedImage = avatarImages.find(
-    (avatar) =>
-      avatar.value === participant.avatarColor ||
-      avatarImageRequestColors[avatar.index]?.toLowerCase() ===
-        participant.avatarColor?.toLowerCase(),
+function participantAvatarStyle(participant: {
+  id?: unknown;
+  displayName?: string | null;
+  avatarColor?: string | null;
+}) {
+  const selectedImage = scrumPokerAvatarImages.find(
+    (avatar) => avatar.value === participant.avatarColor,
   );
-  if (selectedImage) return avatarImageStyle(selectedImage, 50);
+  if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage, 50);
 
   if (sameParticipantId(participant.id, currentParticipantId.value)) {
-    const currentImage = avatarImages.find(
+    const currentImage = scrumPokerAvatarImages.find(
       (avatar) => avatar.value === selectedAvatarColor.value,
     );
-    if (currentImage) return avatarImageStyle(currentImage, 50);
+    if (currentImage) return scrumPokerAvatarImageStyle(currentImage, 50);
   }
 
-  const selectedColor = avatarColors.find(
-    (color) =>
-      color.background.toLowerCase() === participant.avatarColor?.toLowerCase(),
-  );
-  if (selectedColor) {
-    return {
-      "--participant-avatar-bg": avatarBackgroundColor(
-        selectedColor.background,
-      ),
-      "--participant-avatar-fg": isDark.value
-        ? selectedColor.darkForeground
-        : selectedColor.foreground,
-    };
-  }
-
-  if (isOwner) {
-    return {
-      "--participant-avatar-bg": "var(--sp-strong-soft)",
-      "--participant-avatar-fg": "var(--sp-strong)",
-    };
-  }
-
-  const identity = String(participant.id ?? participant.displayName ?? "");
-  let hash = 0;
-  for (const character of identity) {
-    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
-  }
-  const colors = avatarColors[hash % avatarColors.length]!;
-  return {
-    "--participant-avatar-bg": avatarBackgroundColor(colors.background),
-    "--participant-avatar-fg": isDark.value
-      ? colors.darkForeground
-      : colors.foreground,
-  };
-}
-function avatarBackgroundColor(color: string) {
-  if (!isDark.value) return color;
-
-  const red = Number.parseInt(color.slice(1, 3), 16);
-  const green = Number.parseInt(color.slice(3, 5), 16);
-  const blue = Number.parseInt(color.slice(5, 7), 16);
-  return `rgba(${red}, ${green}, ${blue}, 0.3)`;
+  return {};
 }
 function participantHasImage(participant: {
   id?: unknown;
   avatarColor?: string | null;
 }) {
   return (
-    avatarImages.some(
-      (avatar) =>
-        avatar.value === participant.avatarColor ||
-        avatarImageRequestColors[avatar.index]?.toLowerCase() ===
-          participant.avatarColor?.toLowerCase(),
+    scrumPokerAvatarImages.some(
+      (avatar) => avatar.value === participant.avatarColor,
     ) ||
     (sameParticipantId(participant.id, currentParticipantId.value) &&
-      avatarImages.some((avatar) => avatar.value === selectedAvatarColor.value))
+      scrumPokerAvatarImages.some(
+        (avatar) => avatar.value === selectedAvatarColor.value,
+      ))
   );
 }
-function avatarImageStyle(
-  avatar: (typeof avatarImages)[number],
-  displaySize = 60,
-) {
-  const column = avatar.index % 6;
-  const row = Math.floor(avatar.index / 6);
-  return {
-    backgroundImage: `url("${avatarSheetUrl}")`,
-    backgroundColor:
-      avatarColors[avatar.index % avatarColors.length]!.background,
-    backgroundPosition: `-${column * displaySize}px -${row * displaySize}px`,
-    backgroundSize: `${displaySize * 6}px ${displaySize * 3}px`,
-    backgroundRepeat: "no-repeat",
-  };
-}
 function avatarColorForRequest(selection: string) {
-  const image = avatarImages.find((avatar) => avatar.value === selection);
-  return image ? avatarImageRequestColors[image.index]! : selection;
+  return selection;
 }
 function sameParticipantId(left?: unknown, right?: unknown) {
   return (
@@ -996,7 +888,9 @@ async function runSessionAction(
     room.value = result.room ?? null;
     participantName.value = displayName.value.trim();
     if (
-      !avatarImages.some((avatar) => avatar.value === selectedAvatarColor.value)
+      !scrumPokerAvatarImages.some(
+        (avatar) => avatar.value === selectedAvatarColor.value,
+      )
     ) {
       selectedAvatarColor.value =
         currentAvatarColor() ?? selectedAvatarColor.value;
@@ -1024,6 +918,8 @@ async function runSessionAction(
       params: { roomCode: result.roomCode },
     });
     startPolling();
+    await nextTick();
+    showEntranceSplash.value = true;
   } catch (error) {
     if (
       enteringExistingRoom &&
@@ -1902,8 +1798,8 @@ onBeforeUnmount(() => {
 .participant-avatar {
   width: 48px;
   height: 48px;
-  background: var(--participant-avatar-bg, var(--sp-strong-soft));
-  color: var(--participant-avatar-fg, var(--sp-strong));
+  background: transparent;
+  color: inherit;
   font-weight: 700;
 }
 
@@ -1977,6 +1873,8 @@ onBeforeUnmount(() => {
 }
 
 .participant-score-entry {
+  position: relative;
+  z-index: 1;
   display: block;
   height: 36px;
   animation: participant-score-enter 0.28s cubic-bezier(0.2, 0.75, 0.25, 1) both;
@@ -2065,6 +1963,22 @@ onBeforeUnmount(() => {
   padding: 0;
   justify-content: center;
   align-items: center;
+}
+
+.participant-score-slot {
+  position: relative;
+  flex-direction: column;
+}
+
+.score-card-placeholder {
+  position: absolute;
+  z-index: 0;
+  box-sizing: border-box;
+  width: 52px;
+  height: 36px;
+  border: 1px solid #d9dee7;
+  border-radius: 7px;
+  background: transparent;
 }
 
 .participant-status-slot {

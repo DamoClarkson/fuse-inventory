@@ -9,7 +9,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 {
     public const int MaxParticipantsPerRoom = 20;
     public const int MaxDisplayNameLength = 50;
-    private static readonly Regex AvatarColorPattern = new("^#[0-9a-fA-F]{6}$", RegexOptions.Compiled);
+    private static readonly Regex AvatarValuePattern = new(
+        "^(?:#[0-9a-fA-F]{6}|avatar-image-(?:[1-9]|1[0-8]))$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private const int RoomCodeLength = 8;
     private const int ParticipantTokenLength = 32;
@@ -458,8 +460,10 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         new(Guid.NewGuid(), displayName, RandomString("", ParticipantTokenLength), avatarColor, null, utcNow);
 
     private static Result<string?> ValidateAvatarColor(string? avatarColor) =>
-        avatarColor is null || AvatarColorPattern.IsMatch(avatarColor)
-            ? Result<string?>.Success(avatarColor?.ToUpperInvariant())
+        avatarColor is null || AvatarValuePattern.IsMatch(avatarColor)
+            ? Result<string?>.Success(avatarColor?.StartsWith("avatar-image-", StringComparison.OrdinalIgnoreCase) == true
+                ? avatarColor.ToLowerInvariant()
+                : avatarColor?.ToUpperInvariant())
             : Result<string?>.Failure("The avatar color is invalid.");
 
     private static ScrumPokerSession CreateSession(RoomState state, ScrumPokerParticipant? participant = null) =>

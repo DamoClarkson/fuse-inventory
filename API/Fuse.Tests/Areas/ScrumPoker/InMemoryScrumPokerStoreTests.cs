@@ -17,6 +17,19 @@ public sealed class InMemoryScrumPokerStoreTests
     }
 
     [Fact]
+    public void AvatarImageIdentifier_IsAcceptedAndNormalized()
+    {
+        var store = new InMemoryScrumPokerStore();
+
+        var session = store.CreateRoom("Damian", DateTime.UtcNow, "AVATAR-IMAGE-18").Value!;
+        var invalid = store.JoinRoom(session.Room.RoomCode, "Sarah", DateTime.UtcNow.AddSeconds(1), avatarColor: "avatar-image-19");
+
+        Assert.Equal("avatar-image-18", session.Participant.AvatarColor);
+        Assert.False(invalid.IsSuccess);
+        Assert.Equal("The avatar color is invalid.", invalid.Error);
+    }
+
+    [Fact]
     public void OwnerLeaves_TemporaryHostFacilitates_AndOwnerReturnsAsHost()
     {
         var store = new InMemoryScrumPokerStore();
