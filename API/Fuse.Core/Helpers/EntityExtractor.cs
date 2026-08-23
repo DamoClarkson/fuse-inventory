@@ -37,8 +37,8 @@ public static class EntityExtractor
             EntityType.Risk => snapshot.Risks.FirstOrDefault(e => e.Id == entityId),
             EntityType.MessageBroker => snapshot.MessageBrokers.FirstOrDefault(e => e.Id == entityId),
             EntityType.Identity => snapshot.Identities.FirstOrDefault(e => e.Id == entityId),
-            EntityType.SecurityUser => snapshot.Security.Users.FirstOrDefault(e => e.Id == entityId),
-            EntityType.SecurityRole => snapshot.Security.Roles.FirstOrDefault(e => e.Id == entityId),
+            EntityType.SecurityUser => snapshot.SecurityContext.Users.FirstOrDefault(e => e.Id == entityId),
+            EntityType.SecurityRole => snapshot.SecurityContext.Roles.FirstOrDefault(e => e.Id == entityId),
             EntityType.PasswordGeneratorConfig => snapshot.PasswordGeneratorConfig,
             _ => null
         };
@@ -116,18 +116,18 @@ public static class EntityExtractor
             { 
                 Identities = UpdateCollection(snapshot.Identities, entityId, entity as Identity) 
             },
-            EntityType.SecurityUser => snapshot with 
+            EntityType.SecurityUser => snapshot with
             { 
-                Security = snapshot.Security with 
+                SecurityContext = snapshot.SecurityContext with
                 { 
-                    Users = UpdateCollection(snapshot.Security.Users, entityId, entity as SecurityUser) 
+                    Users = UpdateCollection(snapshot.SecurityContext.Users, entityId, entity as FuseUser)
                 } 
             },
-            EntityType.SecurityRole => snapshot with 
+            EntityType.SecurityRole => snapshot with
             { 
-                Security = snapshot.Security with 
+                SecurityContext = snapshot.SecurityContext with
                 { 
-                    Roles = UpdateCollection(snapshot.Security.Roles, entityId, entity as Role) 
+                    Roles = UpdateCollection(snapshot.SecurityContext.Roles, entityId, entity as FuseRole)
                 } 
             },
             EntityType.PasswordGeneratorConfig => snapshot with 
@@ -188,8 +188,8 @@ public static class EntityExtractor
             EntityType.Risk => typeof(Risk),
             EntityType.MessageBroker => typeof(MessageBroker),
             EntityType.Identity => typeof(Identity),
-            EntityType.SecurityUser => typeof(SecurityUser),
-            EntityType.SecurityRole => typeof(Role),
+            EntityType.SecurityUser => typeof(FuseUser),
+            EntityType.SecurityRole => typeof(FuseRole),
             EntityType.PasswordGeneratorConfig => typeof(PasswordGeneratorConfig),
             _ => null
         };

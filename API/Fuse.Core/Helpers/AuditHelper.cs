@@ -65,15 +65,15 @@ public static class AuditHelper
     }
 
     /// <summary>
-    /// Create a sanitized version of a SecurityUser for audit logging (excluding password hash/salt)
+    /// Create a sanitized version of a user for audit logging (excluding password hash/salt).
     /// </summary>
-    public static object SanitizeSecurityUser(SecurityUser user)
+    public static object SanitizeSecurityUser(FuseUser user)
     {
         return new
         {
             user.Id,
             user.UserName,
-            user.Role,
+            user.IsAdmin,
             user.CreatedAt,
             user.UpdatedAt
         };

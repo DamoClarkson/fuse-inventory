@@ -137,11 +137,11 @@ public static class SnapshotValidator
             TagsMustExist(mb.TagIds, $"MessageBroker {mb.Id}");
         }
 
-        // Security Users
-        if (s.Security.Users.Count > 0 && !s.Security.Users.Any(u => u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId)))
+        // Security users
+        if (s.SecurityContext.Users.Count > 0 && !s.SecurityContext.Users.Any(u => u.IsAdmin))
             errs.Add("At least one admin user is required for security settings.");
 
-        var duplicateUsers = s.Security.Users
+        var duplicateUsers = s.SecurityContext.Users
             .GroupBy(u => u.UserName, StringComparer.OrdinalIgnoreCase)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
@@ -150,10 +150,10 @@ public static class SnapshotValidator
         foreach (var user in duplicateUsers)
             errs.Add($"Duplicate security user name detected: {user}");
 
-        if (s.Security.Users.Any(u => string.IsNullOrWhiteSpace(u.UserName)))
+        if (s.SecurityContext.Users.Any(u => string.IsNullOrWhiteSpace(u.UserName)))
             errs.Add("Security user names cannot be empty.");
 
-        if (s.Security.Users.Any(u => string.IsNullOrWhiteSpace(u.PasswordHash) || string.IsNullOrWhiteSpace(u.PasswordSalt)))
+        if (s.SecurityContext.Users.Any(u => string.IsNullOrWhiteSpace(u.PasswordHash) || string.IsNullOrWhiteSpace(u.PasswordSalt)))
             errs.Add("Security user credentials are invalid.");
 
         return errs;

@@ -47,9 +47,8 @@ public class MessageBrokerServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: (brokers ?? Array.Empty<MessageBroker>()).ToArray(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get,
-            new AppSettings()
+            SecurityContext: SecurityContextHelper.Get,
+            AppSettings: new AppSettings()
         );
         return new InMemoryFuseStore(snapshot);
     }

@@ -4,6 +4,7 @@ namespace Fuse.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[AllowWithoutPermission]
 public class AboutController : ControllerBase
 {
     private const string ApplicationName = "Fuse.Inventory";

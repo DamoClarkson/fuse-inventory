@@ -36,7 +36,6 @@ public class SnapshotValidatorTests
             new List<KumaIntegration>(),
             SecretProviders: Array.Empty<SecretProvider>(),
                 SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
-                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
                 SecurityContext: SecurityContextHelper.Get
         );
 
@@ -80,10 +79,7 @@ public class SnapshotValidatorTests
             new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.None, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow),
             new Account(Guid.NewGuid(), extId, TargetKind.External, AuthKind.None, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
         };
-
-        var security = new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>());
-
-    var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, new List<Identity>(), tags, envs, new List<KumaIntegration>(), new List<SecretProvider>(), new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), security, SecurityContextHelper.Get);
+    var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, new List<Identity>(), tags, envs, new List<KumaIntegration>(), new List<SecretProvider>(), new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get);
 
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Empty(errors);
@@ -109,7 +105,7 @@ public class SnapshotValidatorTests
             new List<Position>(), 
             new List<ResponsibilityType>(), 
             new List<ResponsibilityAssignment>(), 
-            new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),  SecurityContextHelper.Get
+            SecurityContextHelper.Get
         );
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Contains(errors, e => e.Contains("ExternalResource") && e.Contains("tag") && e.Contains("not found"));
@@ -130,7 +126,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Contains(errors, e => e.Contains("Account") && e.Contains("Application") && e.Contains("not found"));
@@ -151,7 +147,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Contains(errors, e => e.Contains("Account") && e.Contains("DataStore") && e.Contains("not found"));
@@ -172,7 +168,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Contains(errors, e => e.Contains("Account") && e.Contains("External") && e.Contains("not found"));
@@ -201,8 +197,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), 
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -232,8 +227,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), 
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -263,8 +257,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -290,8 +283,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), 
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -319,8 +311,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), 
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -350,8 +341,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), 
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -381,8 +371,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), 
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -408,8 +397,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()), 
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -436,8 +424,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -468,8 +455,7 @@ public class SnapshotValidatorTests
             envs,
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
-            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get
+            new List<SqlIntegration>(), new List<Position>(), new List<ResponsibilityType>(), new List<ResponsibilityAssignment>(), SecurityContextHelper.Get
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -499,7 +485,6 @@ public class SnapshotValidatorTests
             new List<Position>(), 
             new List<ResponsibilityType>(), 
             new List<ResponsibilityAssignment>(), 
-            new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContextHelper.Get
         );
         var errors = SnapshotValidator.Validate(snapshot);

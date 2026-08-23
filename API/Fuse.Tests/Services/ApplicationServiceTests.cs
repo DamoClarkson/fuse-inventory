@@ -264,7 +264,7 @@ public class ApplicationServiceTests
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
         var env2 = new EnvironmentInfo(Guid.NewGuid(), "E2", null, new HashSet<Guid>());
-        var platform = new Platform(Guid.NewGuid(), "P", "p.example", "linux", PlatformKind.Server, Array.Empty<string>(), null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var platform = new Platform(Guid.NewGuid(), "P", "p.example", "linux", PlatformKind.Server, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(),
             new[] { new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
             Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
@@ -681,7 +681,6 @@ public class ApplicationServiceTests
             SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContext: SecurityContextHelper.Get,
             AppSettings: new AppSettings()
         );
@@ -792,7 +791,7 @@ public class ApplicationServiceTests
     public async Task CreateInstance_ValidatesEnvironmentPlatformAndTags()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
-        var platform = new Platform(Guid.NewGuid(), "P", "platform.example.com", "linux", PlatformKind.Server, Array.Empty<string>(), null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var platform = new Platform(Guid.NewGuid(), "P", "platform.example.com", "linux", PlatformKind.Server, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app }, envs: new[] { env }, platforms: new[] { platform });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());

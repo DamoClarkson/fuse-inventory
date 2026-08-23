@@ -30,7 +30,7 @@ public class SqlPermissionsCacheServiceTests
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
             SecretProviders: Array.Empty<SecretProvider>(),
-            SqlIntegrations: (integrations ?? Array.Empty<SqlIntegration>()).ToArray(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(), Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SqlIntegrations: (integrations ?? Array.Empty<SqlIntegration>()).ToArray(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             SecurityContextHelper.Get
         );
         return new InMemoryFuseStore(snapshot);
@@ -292,7 +292,6 @@ public class SqlPermissionsCacheServiceTests
             KumaIntegrations: Array.Empty<KumaIntegration>(),
             SecretProviders: Array.Empty<SecretProvider>(),
             SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContextHelper.Get
         );
         var store = new InMemoryFuseStore(snapshot);

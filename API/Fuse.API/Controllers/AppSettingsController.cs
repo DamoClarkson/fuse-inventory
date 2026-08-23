@@ -10,6 +10,7 @@ namespace Fuse.API.Controllers;
 public class AppSettingsController(IAppSettingsService appSettingsService) : ControllerBase
 {
     [HttpGet]
+    [AllowWithoutPermission]
     [SwaggerOperation(OperationId = "getAppSettings")]
     [ProducesResponseType(200, Type = typeof(AppSettings))]
     public async Task<ActionResult<AppSettings>> GetAppSettings()

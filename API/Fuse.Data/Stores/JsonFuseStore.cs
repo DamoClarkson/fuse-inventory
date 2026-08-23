@@ -66,7 +66,6 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
                 ResponsibilityAssignments: await ReadAsync<ResponsibilityAssignment>("responsibilityassignments.json", ct),
                 Risks: await ReadAsync<Risk>("risks.json", ct),
                 MessageBrokers: await ReadAsync<MessageBroker>("messagebrokers.json", ct),
-                Security: await ReadSecurityAsync("security.json", ct),
                 SecurityContext: await ReadSecurityContextAsync("securitycontext.json", ct),
                 AppSettings: await ReadObjectAsync<AppSettings>("appsettings.json", ct) ?? new AppSettings(),
                 PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct),
@@ -127,8 +126,6 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
                 writeTasks.Add(WriteAsync("risks.json", snapshot.Risks, ct));
             if (_cache is null || !ReferenceEquals(_cache.MessageBrokers, snapshot.MessageBrokers))
                 writeTasks.Add(WriteAsync("messagebrokers.json", snapshot.MessageBrokers, ct));
-            if (_cache is null || !ReferenceEquals(_cache.Security, snapshot.Security))
-                writeTasks.Add(WriteAsync("security.json", snapshot.Security, ct));
             if (snapshot.PasswordGeneratorConfig is not null && (_cache is null || !ReferenceEquals(_cache.PasswordGeneratorConfig, snapshot.PasswordGeneratorConfig)))
                 writeTasks.Add(WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct));
             if (_cache is null || !ReferenceEquals(_cache.SecurityContext, snapshot.SecurityContext))
@@ -261,19 +258,6 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             await JsonSerializer.SerializeAsync(fs, value, Json, ct);
         }
         File.Move(tmp, path, overwrite: true);
-    }
-
-    private async Task<SecurityState> ReadSecurityAsync(string file, CancellationToken ct)
-    {
-        var path = Path.Combine(_options.DataDirectory, file);
-        if (!File.Exists(path))
-        {
-            return new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>());
-        }
-
-        await using var fs = File.OpenRead(path);
-        return (await JsonSerializer.DeserializeAsync<SecurityState>(fs, Json, ct))
-            ?? new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>());
     }
 
     private async Task<SecurityContext> ReadSecurityContextAsync(string file, CancellationToken ct)

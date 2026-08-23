@@ -31,7 +31,15 @@ public sealed class AuthorizationMiddleware
         var endpointMetadata = endpoint?.Metadata;
         var permissionAttribute = endpointMetadata?.GetMetadata<RequirePermissionKeyAttribute>();
         var requiredKey = permissionAttribute?.PermissionKey;
-        var requiredKeys = permissionAttribute?.PermissionKeys;
+        IReadOnlyList<string>? requiredKeys = permissionAttribute?.PermissionKeys;
+        var undoPermissionAttribute = endpointMetadata?.GetMetadata<RequireUndoPermissionAttribute>();
+        if (requiredKeys is null && undoPermissionAttribute is not null)
+        {
+            requiredKey = await undoPermissionAttribute.ResolvePermissionKeyAsync(context, cancellationToken);
+            requiredKeys = requiredKey is null ? null : new[] { requiredKey };
+        }
+
+        var allowWithoutPermission = endpointMetadata?.GetMetadata<AllowWithoutPermissionAttribute>() is not null;
         var allowDuringSetup = endpointMetadata?.GetMetadata<AllowDuringSetupAttribute>() is not null;
 
         // Admins bypass all further checks
@@ -65,6 +73,18 @@ public sealed class AuthorizationMiddleware
             }
 
             await _next(context);
+            return;
+        }
+
+        // Once setup is complete, every API action must either declare a permission
+        // requirement or explicitly opt out. AllowDuringSetup alone is not a permanent
+        // authorization bypass.
+        if (requiredKeys is null && !allowWithoutPermission)
+        {
+            await LogDeniedAsync(context, logService, requiredKeys, posture, "missing-permission-metadata", cancellationToken);
+            context.Response.StatusCode = user.Identity?.IsAuthenticated == true
+                ? StatusCodes.Status403Forbidden
+                : StatusCodes.Status401Unauthorized;
             return;
         }
 

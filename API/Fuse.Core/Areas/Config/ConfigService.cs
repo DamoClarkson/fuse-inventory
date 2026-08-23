@@ -324,7 +324,6 @@ public class ConfigService : IConfigService
                 ResponsibilityAssignments: current.ResponsibilityAssignments,
                 Risks: current.Risks,
                 MessageBrokers: current.MessageBrokers,
-                Security: current.Security,
                 SecurityContext: current.SecurityContext,
                 AppSettings: current.AppSettings,
                 PasswordGeneratorConfig: current.PasswordGeneratorConfig,

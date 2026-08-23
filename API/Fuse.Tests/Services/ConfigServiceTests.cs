@@ -42,9 +42,8 @@ public class ConfigServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get,
-            new AppSettings()
+            SecurityContext: SecurityContextHelper.Get,
+            AppSettings: new AppSettings()
         );
         return new InMemoryFuseStore(snapshot);
     }
