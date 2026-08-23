@@ -70,30 +70,6 @@
           "
         />
         <div class="avatar-picker q-mt-md">
-          <!-- <div class="avatar-picker__label">Avatar color</div>
-          <div class="avatar-picker__options">
-            <button
-              v-for="color in avatarColors"
-              :key="color.background"
-              type="button"
-              class="avatar-picker__option"
-              :class="{
-                'avatar-picker__option--selected':
-                  selectedAvatarColor === color.background,
-              }"
-              :style="{ backgroundColor: color.background }"
-              :aria-label="`Choose avatar color ${color.background}`"
-              :aria-pressed="selectedAvatarColor === color.background"
-              @click="selectedAvatarColor = color.background"
-            >
-              <q-icon
-                v-if="selectedAvatarColor === color.background"
-                name="check"
-                size="16px"
-                :style="{ color: color.foreground }"
-              />
-            </button>
-          </div> -->
           <div class="avatar-picker__label avatar-picker__label--images">
             Avatar
           </div>
@@ -312,15 +288,7 @@
                 <q-item-section avatar
                   ><q-avatar
                     class="participant-avatar"
-                    :style="
-                      participantAvatarStyle(
-                        participant,
-                        sameParticipantId(
-                          participant.id,
-                          room?.ownerParticipantId,
-                        ),
-                      )
-                    "
+                    :style="participantAvatarStyle(participant)"
                   >
                     <template v-if="!participantHasImage(participant)">
                       {{ participant.displayName?.charAt(0).toUpperCase() }}
@@ -580,7 +548,6 @@ import PlayerEntranceSplash from "../components/PlayerEntranceSplash.vue";
 import {
   scrumPokerAvatarImageStyle,
   scrumPokerAvatarImages,
-  scrumPokerAvatarRequestColors,
 } from "../utils/scrumPokerAvatar";
 
 const route = useRoute();
@@ -742,14 +709,6 @@ const averageHeatColors = [
     darkForeground: "#fff5f2",
   },
 ];
-const avatarColors = [
-  { background: "#d8eaf8", foreground: "#28618b", darkForeground: "#bfe3ff" },
-  { background: "#f9d8e5", foreground: "#8d3156", darkForeground: "#ffd0e1" },
-  { background: "#f8dfc2", foreground: "#8a5422", darkForeground: "#ffd29c" },
-  { background: "#e8ddf5", foreground: "#65438c", darkForeground: "#e4caff" },
-  { background: "#f6edc8", foreground: "#78621c", darkForeground: "#fff0a8" },
-  { background: "#d8f0df", foreground: "#2e7047", darkForeground: "#b9f2c8" },
-];
 function cardLabel(card: ScrumPokerCard) {
   return cards.find((option) => option.value === card)?.label ?? card;
 }
@@ -760,19 +719,13 @@ function nearestDeckValue(average: number) {
     return distance <= closestDistance ? value : closest;
   });
 }
-function participantAvatarStyle(
-  participant: {
-    id?: unknown;
-    displayName?: string | null;
-    avatarColor?: string | null;
-  },
-  isOwner = false,
-) {
+function participantAvatarStyle(participant: {
+  id?: unknown;
+  displayName?: string | null;
+  avatarColor?: string | null;
+}) {
   const selectedImage = scrumPokerAvatarImages.find(
-    (avatar) =>
-      avatar.value === participant.avatarColor ||
-      scrumPokerAvatarRequestColors[avatar.index]?.toLowerCase() ===
-        participant.avatarColor?.toLowerCase(),
+    (avatar) => avatar.value === participant.avatarColor,
   );
   if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage, 50);
 
@@ -783,48 +736,7 @@ function participantAvatarStyle(
     if (currentImage) return scrumPokerAvatarImageStyle(currentImage, 50);
   }
 
-  const selectedColor = avatarColors.find(
-    (color) =>
-      color.background.toLowerCase() === participant.avatarColor?.toLowerCase(),
-  );
-  if (selectedColor) {
-    return {
-      "--participant-avatar-bg": avatarBackgroundColor(
-        selectedColor.background,
-      ),
-      "--participant-avatar-fg": isDark.value
-        ? selectedColor.darkForeground
-        : selectedColor.foreground,
-    };
-  }
-
-  if (isOwner) {
-    return {
-      "--participant-avatar-bg": "var(--sp-strong-soft)",
-      "--participant-avatar-fg": "var(--sp-strong)",
-    };
-  }
-
-  const identity = String(participant.id ?? participant.displayName ?? "");
-  let hash = 0;
-  for (const character of identity) {
-    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
-  }
-  const colors = avatarColors[hash % avatarColors.length]!;
-  return {
-    "--participant-avatar-bg": avatarBackgroundColor(colors.background),
-    "--participant-avatar-fg": isDark.value
-      ? colors.darkForeground
-      : colors.foreground,
-  };
-}
-function avatarBackgroundColor(color: string) {
-  if (!isDark.value) return color;
-
-  const red = Number.parseInt(color.slice(1, 3), 16);
-  const green = Number.parseInt(color.slice(3, 5), 16);
-  const blue = Number.parseInt(color.slice(5, 7), 16);
-  return `rgba(${red}, ${green}, ${blue}, 0.3)`;
+  return {};
 }
 function participantHasImage(participant: {
   id?: unknown;
@@ -832,10 +744,7 @@ function participantHasImage(participant: {
 }) {
   return (
     scrumPokerAvatarImages.some(
-      (avatar) =>
-        avatar.value === participant.avatarColor ||
-        scrumPokerAvatarRequestColors[avatar.index]?.toLowerCase() ===
-          participant.avatarColor?.toLowerCase(),
+      (avatar) => avatar.value === participant.avatarColor,
     ) ||
     (sameParticipantId(participant.id, currentParticipantId.value) &&
       scrumPokerAvatarImages.some(
@@ -844,10 +753,7 @@ function participantHasImage(participant: {
   );
 }
 function avatarColorForRequest(selection: string) {
-  const image = scrumPokerAvatarImages.find(
-    (avatar) => avatar.value === selection,
-  );
-  return image ? scrumPokerAvatarRequestColors[image.index]! : selection;
+  return selection;
 }
 function sameParticipantId(left?: unknown, right?: unknown) {
   return (
@@ -1892,8 +1798,8 @@ onBeforeUnmount(() => {
 .participant-avatar {
   width: 48px;
   height: 48px;
-  background: var(--participant-avatar-bg, var(--sp-strong-soft));
-  color: var(--participant-avatar-fg, var(--sp-strong));
+  background: transparent;
+  color: inherit;
   font-weight: 700;
 }
 
