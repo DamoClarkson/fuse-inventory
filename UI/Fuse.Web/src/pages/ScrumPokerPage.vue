@@ -83,7 +83,7 @@
                 'avatar-picker__option--selected':
                   selectedAvatarColor === avatar.value,
               }"
-              :style="scrumPokerAvatarImageStyle(avatar)"
+              :style="scrumPokerAvatarImageStyle(avatar, true)"
               :aria-label="`Choose avatar ${avatar.index + 1}`"
               :aria-pressed="selectedAvatarColor === avatar.value"
               @click="selectedAvatarColor = avatar.value"
@@ -282,7 +282,7 @@
             </div>
             <q-list class="participant-list">
               <q-item
-                v-for="participant in room?.participants ?? []"
+                v-for="participant in orderedParticipants"
                 :key="participant.id"
               >
                 <q-item-section avatar
@@ -337,7 +337,23 @@
                     </template>
                   </q-item-label>
                 </q-item-section>
-                <q-item-section side class="participant-remove-slot">
+                <q-item-section side class="participant-management-slot">
+                  <q-btn
+                    v-if="
+                      isCurrentHost && participant.id !== currentParticipantId
+                    "
+                    flat
+                    round
+                    dense
+                    icon="swap_horiz"
+                    class="participant-transfer-btn"
+                    aria-label="Make participant host"
+                    @click="
+                      transferHost(participant.id, participant.displayName)
+                    "
+                  >
+                    <q-tooltip>Make host</q-tooltip>
+                  </q-btn>
                   <q-btn
                     v-if="
                       isRoomOwner && participant.id !== currentParticipantId
@@ -540,6 +556,7 @@ import {
   ScrumPokerRemoveParticipantRequest,
   ScrumPokerRoomResponse,
   ScrumPokerSessionResponse,
+  ScrumPokerTransferOwnershipRequest,
   ApiException,
 } from "api/client";
 import { useFuseStore } from "../stores/FuseStore";
@@ -599,6 +616,17 @@ const isCurrentHost = computed(() =>
     room.value?.currentHostParticipantId,
   ),
 );
+const orderedParticipants = computed(() => {
+  const participants = room.value?.participants ?? [];
+  const owner = participants.find((participant) =>
+    sameParticipantId(participant.id, room.value?.ownerParticipantId),
+  );
+  if (!owner) return participants;
+  return [
+    owner,
+    ...participants.filter((participant) => participant !== owner),
+  ];
+});
 const roomAutoReveal = computed(() => room.value?.autoReveal === true);
 const roomLockVotesAfterReveal = computed(
   () => room.value?.lockVotesAfterReveal === true,
@@ -727,13 +755,13 @@ function participantAvatarStyle(participant: {
   const selectedImage = scrumPokerAvatarImages.find(
     (avatar) => avatar.value === participant.avatarColor,
   );
-  if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage);
+  if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage, false);
 
   if (sameParticipantId(participant.id, currentParticipantId.value)) {
     const currentImage = scrumPokerAvatarImages.find(
       (avatar) => avatar.value === selectedAvatarColor.value,
     );
-    if (currentImage) return scrumPokerAvatarImageStyle(currentImage);
+    if (currentImage) return scrumPokerAvatarImageStyle(currentImage, false);
   }
 
   return {};
@@ -1039,23 +1067,6 @@ function stopPolling() {
   }
 }
 
-function leaveRoomOnPageExit() {
-  const currentSession = session.value;
-  if (!currentSession?.roomCode || !currentSession.participantToken) return;
-
-  const body = new Blob(
-    [JSON.stringify({ participantToken: currentSession.participantToken })],
-    { type: "application/json" },
-  );
-  const sent = navigator.sendBeacon(
-    apiUrl(
-      `/api/scrum-poker/rooms/${encodeURIComponent(currentSession.roomCode)}/leave`,
-    ),
-    body,
-  );
-  if (sent) sessionStorage.removeItem(storageKey(currentSession.roomCode));
-}
-
 async function selectCard(card: ScrumPokerCard | null) {
   if (!session.value) return;
   actionLoading.value = true;
@@ -1121,6 +1132,37 @@ async function copyInviteLink() {
   const inviteUrl = `${window.location.origin}/scrum-poker/${session.value.roomCode}`;
   await navigator.clipboard?.writeText(inviteUrl);
   Notify.create({ message: "Invite link copied", color: "positive" });
+}
+
+function transferHost(participantId?: string, displayName?: string) {
+  if (!isCurrentHost.value || !participantId || !session.value?.roomCode)
+    return;
+
+  Dialog.create({
+    title: "Transfer host role?",
+    message: `Make ${displayName || "this participant"} the host?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    actionLoading.value = true;
+    errorMessage.value = "";
+    try {
+      room.value = await client.scrumPokerTransferOwnership(
+        session.value!.roomCode!,
+        new ScrumPokerTransferOwnershipRequest({
+          ownerToken: session.value!.participantToken,
+          participantId,
+        }),
+      );
+    } catch (error) {
+      errorMessage.value =
+        error instanceof Error
+          ? error.message
+          : "Unable to transfer host role.";
+    } finally {
+      actionLoading.value = false;
+    }
+  });
 }
 
 function removeParticipant(participantId?: string, displayName?: string) {
@@ -1392,9 +1434,7 @@ watch(
   },
   { immediate: true },
 );
-onMounted(() => window.addEventListener("pagehide", leaveRoomOnPageExit));
 onBeforeUnmount(() => {
-  window.removeEventListener("pagehide", leaveRoomOnPageExit);
   stopPolling();
 });
 </script>
@@ -1964,7 +2004,7 @@ onBeforeUnmount(() => {
   transform: rotateY(180deg);
 }
 
-.participant-remove-slot,
+.participant-management-slot,
 .participant-score-slot {
   flex: 0 0 52px;
   width: 52px;
@@ -1972,6 +2012,16 @@ onBeforeUnmount(() => {
   padding: 0;
   justify-content: center;
   align-items: center;
+}
+
+.participant-management-slot {
+  flex-basis: 92px;
+  width: 92px;
+  min-width: 92px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.1rem;
 }
 
 .participant-score-slot {
@@ -1996,11 +2046,13 @@ onBeforeUnmount(() => {
   min-width: 92px;
 }
 
+.participant-transfer-btn,
 .participant-remove-btn {
   color: #d3d9e1;
-  margin-right: 2rem;
+  margin-right: 1em;
 }
 
+.participant-transfer-btn:hover,
 .participant-remove-btn:hover {
   color: #7f8da0;
 }
