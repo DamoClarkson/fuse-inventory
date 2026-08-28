@@ -347,12 +347,12 @@
                     dense
                     icon="swap_horiz"
                     class="participant-transfer-btn"
-                    aria-label="Make participant host"
+                    aria-label="Make participant owner"
                     @click="
                       transferHost(participant.id, participant.displayName)
                     "
                   >
-                    <q-tooltip>Make host</q-tooltip>
+                    <q-tooltip>Make owner</q-tooltip>
                   </q-btn>
                   <q-btn
                     v-if="
@@ -1139,8 +1139,8 @@ function transferHost(participantId?: string, displayName?: string) {
     return;
 
   Dialog.create({
-    title: "Transfer host role?",
-    message: `Make ${displayName || "this participant"} the host?`,
+    title: "Transfer ownership?",
+    message: `Make ${displayName || "this participant"} the owner?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
@@ -1158,7 +1158,7 @@ function transferHost(participantId?: string, displayName?: string) {
       errorMessage.value =
         error instanceof Error
           ? error.message
-          : "Unable to transfer host role.";
+          : "Unable to transfer ownership.";
     } finally {
       actionLoading.value = false;
     }
