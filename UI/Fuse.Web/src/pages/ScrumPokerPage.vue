@@ -147,10 +147,10 @@
             v-else
             unelevated
             color="primary"
-            label="Create new room"
+            label="Enter room"
             :disable="!canSubmit"
             :loading="loading"
-            @click="createRoom"
+            @click="enterRoom"
           />
         </template>
         <template v-else>
@@ -727,13 +727,13 @@ function participantAvatarStyle(participant: {
   const selectedImage = scrumPokerAvatarImages.find(
     (avatar) => avatar.value === participant.avatarColor,
   );
-  if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage, 50);
+  if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage);
 
   if (sameParticipantId(participant.id, currentParticipantId.value)) {
     const currentImage = scrumPokerAvatarImages.find(
       (avatar) => avatar.value === selectedAvatarColor.value,
     );
-    if (currentImage) return scrumPokerAvatarImageStyle(currentImage, 50);
+    if (currentImage) return scrumPokerAvatarImageStyle(currentImage);
   }
 
   return {};
@@ -751,9 +751,6 @@ function participantHasImage(participant: {
         (avatar) => avatar.value === selectedAvatarColor.value,
       ))
   );
-}
-function avatarColorForRequest(selection: string) {
-  return selection;
 }
 function sameParticipantId(left?: unknown, right?: unknown) {
   return (
@@ -819,6 +816,19 @@ function storedParticipantToken(code: string, displayName: string) {
     : undefined;
 }
 
+function sessionActionError(error: unknown, fallback: string) {
+  if (error instanceof ApiException) {
+    try {
+      const payload = JSON.parse(error.response) as { error?: string };
+      if (payload.error) return payload.error;
+    } catch {
+      // Use the generated API error when the response is not JSON.
+    }
+  }
+
+  return error instanceof Error ? error.message : fallback;
+}
+
 function editRoomName() {
   if (!isRoomOwner.value) return;
 
@@ -842,7 +852,7 @@ async function createRoom() {
   await runSessionAction(() =>
     client.scrumPokerRoomsPOST({
       displayName: displayName.value.trim(),
-      avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
+      avatarColor: selectedAvatarColor.value!,
     } as any),
   );
 }
@@ -854,7 +864,7 @@ async function joinRoom() {
     client.scrumPokerRoomsJoin(code, {
       displayName: displayName.value.trim(),
       participantToken: storedParticipantToken(code, displayName.value.trim()),
-      avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
+      avatarColor: selectedAvatarColor.value!,
     } as any),
   );
 }
@@ -869,7 +879,7 @@ async function enterRoom() {
           roomCodeFromUrl.value,
           displayName.value.trim(),
         ),
-        avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
+        avatarColor: selectedAvatarColor.value!,
       } as any),
     true,
   );
@@ -929,8 +939,7 @@ async function runSessionAction(
     ) {
       roomEntryStatus.value = "expired";
     }
-    errorMessage.value =
-      error instanceof Error ? error.message : "Unable to join the room.";
+    errorMessage.value = sessionActionError(error, "Unable to join the room.");
   } finally {
     loading.value = false;
   }
@@ -1796,8 +1805,8 @@ onBeforeUnmount(() => {
 }
 
 .participant-avatar {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
   background: transparent;
   color: inherit;
   font-weight: 700;

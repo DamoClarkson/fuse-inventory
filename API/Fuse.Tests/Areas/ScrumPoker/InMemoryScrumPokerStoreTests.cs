@@ -66,6 +66,22 @@ public sealed class InMemoryScrumPokerStoreTests
     }
 
     [Fact]
+    public void JoinOrCreateRoom_RecreatesExpiredRoomWithSameCode()
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var original = store.CreateRoom("Damian", now).Value!;
+        store.Leave(original.Room.RoomCode, original.Participant.Token, now.AddSeconds(1));
+
+        var recreated = store.JoinOrCreateRoom(original.Room.RoomCode, "Sarah", now.AddHours(4).AddSeconds(2), avatarColor: "#123456").Value!;
+
+        Assert.Equal(original.Room.RoomCode, recreated.Room.RoomCode);
+        Assert.Equal(recreated.Participant.Id, recreated.Room.OwnerParticipantId);
+        Assert.Equal(recreated.Participant.Id, recreated.Room.CurrentHostParticipantId);
+        Assert.Equal("#123456", recreated.Participant.AvatarColor);
+    }
+
+    [Fact]
     public void ActiveParticipantActivityExtendsRoomLifetime()
     {
         var now = DateTime.UtcNow;

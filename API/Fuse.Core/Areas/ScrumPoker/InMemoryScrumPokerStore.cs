@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using Fuse.Core.Helpers;
 
 namespace Fuse.Core.Areas.ScrumPoker;
@@ -9,9 +8,6 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 {
     public const int MaxParticipantsPerRoom = 20;
     public const int MaxDisplayNameLength = 50;
-    private static readonly Regex AvatarValuePattern = new(
-        "^(?:#[0-9a-fA-F]{6}|avatar-image-(?:[1-9]|1[0-8]))$",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private const int RoomCodeLength = 8;
     private const int ParticipantTokenLength = 32;
@@ -42,11 +38,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
                 roomCode = RandomString(RoomCodeAlphabet, RoomCodeLength);
             } while (_rooms.ContainsKey(roomCode));
 
-            var colorResult = ValidateAvatarColor(avatarColor);
-            if (!colorResult.IsSuccess)
-                return Result<ScrumPokerSession>.Failure(colorResult.Error!, colorResult);
-
-            var participant = CreateParticipant(nameResult.Value!, utcNow, colorResult.Value);
+            var participant = CreateParticipant(nameResult.Value!, utcNow, avatarColor);
             state = new RoomState(roomCode, utcNow, participant);
             _rooms.Add(roomCode, state);
         }
@@ -85,16 +77,12 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             if (participant is not null && state.Participants.ContainsKey(participant.Id))
                 return Result<ScrumPokerSession>.Failure("That participant is already in the room.", ErrorType.Conflict);
 
-            var colorResult = ValidateAvatarColor(avatarColor);
-            if (!colorResult.IsSuccess)
-                return Result<ScrumPokerSession>.Failure(colorResult.Error!, colorResult);
-
             participant = participant is null
-                ? CreateParticipant(nameResult.Value!, utcNow, colorResult.Value)
+                ? CreateParticipant(nameResult.Value!, utcNow, avatarColor)
                 : participant with
                 {
                     DisplayName = nameResult.Value!,
-                    AvatarColor = colorResult.Value ?? participant.AvatarColor,
+                    AvatarColor = avatarColor ?? participant.AvatarColor,
                     LastSeenUtc = utcNow
                 };
             state.Participants.Add(participant.Id, participant);
@@ -107,7 +95,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         }
     }
 
-    public Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow)
+    public Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow, string? participantToken = null, string? avatarColor = null)
     {
         var nameResult = ValidateDisplayName(displayName);
         if (!nameResult.IsSuccess)
@@ -117,15 +105,20 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         if (normalizedCode is null)
             return Result<ScrumPokerSession>.Failure("The room code is invalid.");
 
-        if (FindActiveRoom(normalizedCode, utcNow) is not null)
-            return JoinRoom(normalizedCode, nameResult.Value!, utcNow);
-
         lock (_roomsLock)
         {
-            if (_rooms.ContainsKey(normalizedCode))
-                return JoinRoom(normalizedCode, nameResult.Value!, utcNow);
+            if (_rooms.TryGetValue(normalizedCode, out var existingRoom))
+            {
+                lock (existingRoom.Gate)
+                {
+                    if (!IsExpired(existingRoom, utcNow))
+                        return JoinRoom(normalizedCode, nameResult.Value!, utcNow, participantToken, avatarColor);
+                }
 
-            var participant = CreateParticipant(nameResult.Value!, utcNow, null);
+                _rooms.Remove(normalizedCode);
+            }
+
+            var participant = CreateParticipant(nameResult.Value!, utcNow, avatarColor);
             var state = new RoomState(normalizedCode, utcNow, participant);
             _rooms.Add(normalizedCode, state);
             return Result<ScrumPokerSession>.Success(CreateSession(state));
@@ -426,11 +419,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 
             lock (state.Gate)
             {
-                var lastParticipantActivity = state.Participants.Values
-                    .Select(participant => participant.LastSeenUtc)
-                    .DefaultIfEmpty(state.LastActivityUtc)
-                    .Max();
-                if (utcNow - lastParticipantActivity >= _roomLifetime)
+                if (IsExpired(state, utcNow))
                 {
                     _rooms.Remove(state.RoomCode);
                     return null;
@@ -439,6 +428,15 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
                 return state;
             }
         }
+    }
+
+    private bool IsExpired(RoomState state, DateTime utcNow)
+    {
+        var lastParticipantActivity = state.Participants.Values
+            .Select(participant => participant.LastSeenUtc)
+            .DefaultIfEmpty(state.LastActivityUtc)
+            .Max();
+        return utcNow - lastParticipantActivity >= _roomLifetime;
     }
 
     private Result<(RoomState State, ScrumPokerParticipant Participant)> GetParticipantRoom(string roomCode, string token, DateTime utcNow)
@@ -458,13 +456,6 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 
     private static ScrumPokerParticipant CreateParticipant(string displayName, DateTime utcNow, string? avatarColor) =>
         new(Guid.NewGuid(), displayName, RandomString("", ParticipantTokenLength), avatarColor, null, utcNow);
-
-    private static Result<string?> ValidateAvatarColor(string? avatarColor) =>
-        avatarColor is null || AvatarValuePattern.IsMatch(avatarColor)
-            ? Result<string?>.Success(avatarColor?.StartsWith("avatar-image-", StringComparison.OrdinalIgnoreCase) == true
-                ? avatarColor.ToLowerInvariant()
-                : avatarColor?.ToUpperInvariant())
-            : Result<string?>.Failure("The avatar color is invalid.");
 
     private static ScrumPokerSession CreateSession(RoomState state, ScrumPokerParticipant? participant = null) =>
         new(CreateRoomSnapshot(state), participant ?? state.Participants.Values.First());
