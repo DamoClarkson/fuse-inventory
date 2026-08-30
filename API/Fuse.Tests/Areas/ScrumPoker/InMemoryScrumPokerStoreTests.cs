@@ -14,6 +14,24 @@ public sealed class InMemoryScrumPokerStoreTests
 
         Assert.Equal(session.Participant.Id, session.Room.OwnerParticipantId);
         Assert.Equal(session.Participant.Id, session.Room.CurrentHostParticipantId);
+        Assert.NotEmpty(session.OwnerToken);
+    }
+
+    [Fact]
+    public void OwnerToken_CannotPromoteSecondParticipantWhileOwnerIsActive()
+    {
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Damian", DateTime.UtcNow).Value!;
+
+        var guest = store.JoinRoom(
+            owner.Room.RoomCode,
+            "Guest",
+            DateTime.UtcNow.AddSeconds(1),
+            ownerToken: owner.OwnerToken).Value!;
+
+        Assert.Equal(owner.Participant.Id, guest.Room.OwnerParticipantId);
+        Assert.Equal(owner.Participant.Id, guest.Room.CurrentHostParticipantId);
+        Assert.Null(guest.OwnerToken);
     }
 
     [Fact]
@@ -76,9 +94,22 @@ public sealed class InMemoryScrumPokerStoreTests
         var recreated = store.JoinOrCreateRoom(original.Room.RoomCode, "Sarah", now.AddHours(4).AddSeconds(2), avatarColor: "#123456").Value!;
 
         Assert.Equal(original.Room.RoomCode, recreated.Room.RoomCode);
-        Assert.Equal(recreated.Participant.Id, recreated.Room.OwnerParticipantId);
+        Assert.Equal(Guid.Empty, recreated.Room.OwnerParticipantId);
         Assert.Equal(recreated.Participant.Id, recreated.Room.CurrentHostParticipantId);
+        Assert.Equal(original.Room.OwnerToken, recreated.Room.OwnerToken);
+        Assert.Null(recreated.OwnerToken);
         Assert.Equal("#123456", recreated.Participant.AvatarColor);
+
+        store.Leave(recreated.Room.RoomCode, recreated.Participant.Token, now.AddHours(4).AddSeconds(3));
+        var ownerReturns = store.JoinOrCreateRoom(
+            original.Room.RoomCode,
+            "Different name",
+            now.AddHours(4).AddSeconds(4),
+            ownerToken: original.Room.OwnerToken).Value!;
+
+        Assert.Equal(ownerReturns.Participant.Id, ownerReturns.Room.OwnerParticipantId);
+        Assert.Equal(ownerReturns.Participant.Id, ownerReturns.Room.CurrentHostParticipantId);
+        Assert.Equal(original.Room.OwnerToken, ownerReturns.OwnerToken);
     }
 
     [Fact]
@@ -104,9 +135,11 @@ public sealed class InMemoryScrumPokerStoreTests
         var unauthorized = store.TransferOwnership(owner.Room.RoomCode, sarah.Participant.Token, owner.Participant.Id, DateTime.UtcNow.AddSeconds(2));
         Assert.False(unauthorized.IsSuccess);
 
-        var transferred = store.TransferOwnership(owner.Room.RoomCode, owner.Participant.Token, sarah.Participant.Id, DateTime.UtcNow.AddSeconds(3)).Value!;
+        var transferred = store.TransferOwnership(owner.Room.RoomCode, owner.Room.OwnerToken, sarah.Participant.Id, DateTime.UtcNow.AddSeconds(3)).Value!;
         Assert.Equal(sarah.Participant.Id, transferred.OwnerParticipantId);
         Assert.Equal(sarah.Participant.Id, transferred.CurrentHostParticipantId);
+        Assert.NotEqual(owner.Room.OwnerToken, transferred.OwnerToken);
+        Assert.False(store.TransferOwnership(owner.Room.RoomCode, owner.Room.OwnerToken, owner.Participant.Id, DateTime.UtcNow.AddSeconds(4)).IsSuccess);
     }
 
     [Fact]
@@ -138,5 +171,19 @@ public sealed class InMemoryScrumPokerStoreTests
         var lockedVote = store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, ScrumPokerCard.Eight, now.AddSeconds(3));
         Assert.False(lockedVote.IsSuccess);
         Assert.Equal(ErrorType.Conflict, lockedVote.ErrorType);
+    }
+
+    [Fact]
+    public void ExpiredRoomMetadata_IsForgottenAfterThirtyDays()
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var original = store.CreateRoom("Damian", now).Value!;
+
+        store.RoomExists(original.Room.RoomCode, now.AddHours(4).AddSeconds(1));
+        var forgotten = store.JoinOrCreateRoom(original.Room.RoomCode, "Taylor", now.AddHours(4).AddDays(30).AddSeconds(2)).Value!;
+
+        Assert.NotEqual(original.Room.OwnerToken, forgotten.Room.OwnerToken);
+        Assert.Equal(forgotten.Participant.Id, forgotten.Room.OwnerParticipantId);
     }
 }

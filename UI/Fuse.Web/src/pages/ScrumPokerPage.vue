@@ -347,12 +347,18 @@
                     dense
                     icon="swap_horiz"
                     class="participant-transfer-btn"
-                    aria-label="Make participant owner"
+                    :aria-label="
+                      isRoomOwner
+                        ? 'Make participant owner'
+                        : 'Make participant host'
+                    "
                     @click="
                       transferHost(participant.id, participant.displayName)
                     "
                   >
-                    <q-tooltip>Make owner</q-tooltip>
+                    <q-tooltip>
+                      {{ isRoomOwner ? "Transfer ownership" : "Transfer host" }}
+                    </q-tooltip>
                   </q-btn>
                   <q-btn
                     v-if="
@@ -556,6 +562,7 @@ import {
   ScrumPokerRemoveParticipantRequest,
   ScrumPokerRoomResponse,
   ScrumPokerSessionResponse,
+  ScrumPokerTransferHostRequest,
   ScrumPokerTransferOwnershipRequest,
   ApiException,
 } from "api/client";
@@ -590,6 +597,7 @@ const errorMessage = ref("");
 const roomEntryStatus = ref<"unknown" | "expired">("unknown");
 const selectedCard = ref<ScrumPokerCard | null>(null);
 let pollTimer: ReturnType<typeof setInterval> | undefined;
+let ownerRecoveryInFlight = false;
 
 const featureEnabled = computed(
   () => fuseStore.appSettings?.scrumPokerEnabled === true,
@@ -607,8 +615,13 @@ const canSubmit = computed(
     selectedAvatarColor.value !== null,
 );
 const currentParticipantId = computed(() => session.value?.participantId);
-const isRoomOwner = computed(() =>
-  sameParticipantId(currentParticipantId.value, room.value?.ownerParticipantId),
+const isRoomOwner = computed(
+  () =>
+    Boolean(session.value?.ownerToken) &&
+    sameParticipantId(
+      currentParticipantId.value,
+      room.value?.ownerParticipantId,
+    ),
 );
 const isCurrentHost = computed(() =>
   sameParticipantId(
@@ -812,36 +825,90 @@ function cardValue(card: ScrumPokerCard): number | null {
 function storageKey(code: string) {
   return `fuse:scrum-poker:${code}`;
 }
-function identityStorageKey(code: string) {
-  return `fuse:scrum-poker-identity:${code}`;
+const ownerTokensStorageKey = "fuse:scrum-poker-owner-tokens";
+const legacyOwnerTokenStoragePrefix = "fuse:scrum-poker-owner:";
+const ownerTokenLifetimeMs = 30 * 24 * 60 * 60 * 1000;
+function clearLegacyParticipantIdentityStorage() {
+  const prefix = "fuse:scrum-poker-identity:";
+  for (const storage of [localStorage, sessionStorage]) {
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index);
+      if (key?.startsWith(prefix)) storage.removeItem(key);
+    }
+  }
 }
 function apiUrl(path: string) {
   return `${import.meta.env.VITE_API_BASE_URL ?? ""}${path}`;
 }
-function storedParticipantIdentity(code: string) {
-  const key = identityStorageKey(code);
-  const stored = localStorage.getItem(key) ?? sessionStorage.getItem(key);
-  if (!stored) return undefined;
-  try {
-    const identity = JSON.parse(stored) as {
-      participantId?: string;
-      participantToken?: string;
-      displayName?: string;
-    };
-    localStorage.setItem(key, JSON.stringify(identity));
-    return identity;
-  } catch {
-    localStorage.removeItem(key);
-    return undefined;
-  }
+function normalizedRoomCode(code: string) {
+  return code.trim().toUpperCase();
 }
-function storedParticipantToken(code: string, displayName: string) {
-  const identity = storedParticipantIdentity(code);
-  return identity?.displayName?.localeCompare(displayName, undefined, {
-    sensitivity: "accent",
-  }) === 0
-    ? identity.participantToken
-    : undefined;
+function readOwnerTokens() {
+  const now = Date.now();
+  const stored = localStorage.getItem(ownerTokensStorageKey);
+  let tokens: Record<string, { token: string; expiresAt: number }> = {};
+  if (stored) {
+    try {
+      tokens = JSON.parse(stored);
+    } catch {
+      localStorage.removeItem(ownerTokensStorageKey);
+    }
+  }
+
+  let changed = false;
+  for (const [roomCode, entry] of Object.entries(tokens)) {
+    if (
+      !entry?.token ||
+      typeof entry.expiresAt !== "number" ||
+      entry.expiresAt <= now
+    ) {
+      delete tokens[roomCode];
+      changed = true;
+    }
+  }
+
+  if (changed)
+    localStorage.setItem(ownerTokensStorageKey, JSON.stringify(tokens));
+  return tokens;
+}
+function storeOwnerToken(code: string, token: string) {
+  const tokens = readOwnerTokens();
+  tokens[normalizedRoomCode(code)] = {
+    token,
+    expiresAt: Date.now() + ownerTokenLifetimeMs,
+  };
+  localStorage.setItem(ownerTokensStorageKey, JSON.stringify(tokens));
+}
+function removeOwnerToken(code: string) {
+  const tokens = readOwnerTokens();
+  delete tokens[normalizedRoomCode(code)];
+  localStorage.setItem(ownerTokensStorageKey, JSON.stringify(tokens));
+}
+function removeOwnerTokenIfMatches(code: string, token: string) {
+  if (storedOwnerToken(code) === token) removeOwnerToken(code);
+}
+function storedOwnerToken(code: string) {
+  return readOwnerTokens()[normalizedRoomCode(code)]?.token;
+}
+function migrateLegacyOwnerTokens() {
+  const tokens = readOwnerTokens();
+  let changed = false;
+  for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+    const key = localStorage.key(index);
+    if (!key?.startsWith(legacyOwnerTokenStoragePrefix)) continue;
+    const roomCode = key.slice(legacyOwnerTokenStoragePrefix.length);
+    const token = localStorage.getItem(key);
+    if (roomCode && token && !tokens[normalizedRoomCode(roomCode)]) {
+      tokens[normalizedRoomCode(roomCode)] = {
+        token,
+        expiresAt: Date.now() + ownerTokenLifetimeMs,
+      };
+      changed = true;
+    }
+    localStorage.removeItem(key);
+  }
+  if (changed)
+    localStorage.setItem(ownerTokensStorageKey, JSON.stringify(tokens));
 }
 
 function sessionActionError(error: unknown, fallback: string) {
@@ -891,7 +958,7 @@ async function joinRoom() {
   await runSessionAction(() =>
     client.scrumPokerRoomsJoin(code, {
       displayName: displayName.value.trim(),
-      participantToken: storedParticipantToken(code, displayName.value.trim()),
+      ownerToken: storedOwnerToken(code),
       avatarColor: selectedAvatarColor.value!,
     } as any),
   );
@@ -903,10 +970,7 @@ async function enterRoom() {
     () =>
       client.scrumPokerRoomsEnter(roomCodeFromUrl.value, {
         displayName: displayName.value.trim(),
-        participantToken: storedParticipantToken(
-          roomCodeFromUrl.value,
-          displayName.value.trim(),
-        ),
+        ownerToken: storedOwnerToken(roomCodeFromUrl.value),
         avatarColor: selectedAvatarColor.value!,
       } as any),
     true,
@@ -934,15 +998,8 @@ async function runSessionAction(
         currentAvatarColor() ?? selectedAvatarColor.value;
     }
     selectedCard.value = currentCard();
-    if (result.roomCode && result.participantToken)
-      localStorage.setItem(
-        identityStorageKey(result.roomCode),
-        JSON.stringify({
-          participantId: result.participantId,
-          participantToken: result.participantToken,
-          displayName: participantName.value,
-        }),
-      );
+    if (result.roomCode && result.ownerToken)
+      storeOwnerToken(result.roomCode, result.ownerToken);
     if (result.roomCode && result.participantToken)
       sessionStorage.setItem(
         storageKey(result.roomCode),
@@ -965,6 +1022,7 @@ async function runSessionAction(
         (error instanceof Error &&
           /404|not found|expired/i.test(error.message)))
     ) {
+      removeOwnerToken(roomCodeFromUrl.value || joinCode.value);
       roomEntryStatus.value = "expired";
     }
     errorMessage.value = sessionActionError(error, "Unable to join the room.");
@@ -996,6 +1054,57 @@ async function refreshRoom() {
       session.value.participantToken,
     );
     room.value = result;
+    const currentSession = session.value;
+    if (
+      sameParticipantId(
+        currentSession.participantId,
+        result.ownerParticipantId,
+      ) &&
+      !currentSession.ownerToken &&
+      !ownerRecoveryInFlight
+    ) {
+      ownerRecoveryInFlight = true;
+      try {
+        const ownerSession = await client.scrumPokerRoomsEnter(
+          currentSession.roomCode!,
+          {
+            displayName: participantName.value || displayName.value.trim(),
+            participantToken: currentSession.participantToken,
+          } as any,
+        );
+        session.value = ownerSession;
+        room.value = ownerSession.room ?? result;
+        if (ownerSession.roomCode && ownerSession.ownerToken)
+          storeOwnerToken(ownerSession.roomCode, ownerSession.ownerToken);
+        if (ownerSession.roomCode && ownerSession.participantToken)
+          sessionStorage.setItem(
+            storageKey(ownerSession.roomCode),
+            JSON.stringify({
+              session: ownerSession,
+              participantName: participantName.value,
+            }),
+          );
+      } finally {
+        ownerRecoveryInFlight = false;
+      }
+    } else if (
+      currentSession.ownerToken &&
+      !sameParticipantId(
+        currentSession.participantId,
+        result.ownerParticipantId,
+      )
+    ) {
+      const previousOwnerToken = currentSession.ownerToken;
+      currentSession.ownerToken = undefined;
+      removeOwnerTokenIfMatches(currentSession.roomCode!, previousOwnerToken);
+      sessionStorage.setItem(
+        storageKey(currentSession.roomCode!),
+        JSON.stringify({
+          session: currentSession,
+          participantName: participantName.value,
+        }),
+      );
+    }
     const nextHost = result.participants?.find(
       (participant) => participant.id === result.currentHostParticipantId,
     );
@@ -1016,7 +1125,7 @@ async function refreshRoom() {
     if (isInvalidSessionError(error)) {
       try {
         const result = await client.scrumPokerRoomsEnter(
-          session.value.roomCode,
+          session.value.roomCode!,
           {
             displayName: participantName.value || displayName.value.trim(),
             participantToken: session.value.participantToken,
@@ -1032,7 +1141,6 @@ async function refreshRoom() {
       const roomCode = session.value.roomCode!;
       stopPolling();
       sessionStorage.removeItem(storageKey(roomCode));
-      localStorage.removeItem(identityStorageKey(roomCode));
       session.value = null;
       room.value = null;
       selectedCard.value = null;
@@ -1139,26 +1247,38 @@ function transferHost(participantId?: string, displayName?: string) {
     return;
 
   Dialog.create({
-    title: "Transfer ownership?",
-    message: `Make ${displayName || "this participant"} the owner?`,
+    title: isRoomOwner.value ? "Transfer ownership?" : "Transfer host?",
+    message: `Make ${displayName || "this participant"} the ${
+      isRoomOwner.value ? "owner" : "host"
+    }?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
     actionLoading.value = true;
     errorMessage.value = "";
     try {
-      room.value = await client.scrumPokerTransferOwnership(
-        session.value!.roomCode!,
-        new ScrumPokerTransferOwnershipRequest({
-          ownerToken: session.value!.participantToken,
-          participantId,
-        }),
-      );
+      room.value = isRoomOwner.value
+        ? await client.scrumPokerTransferOwnership(
+            session.value!.roomCode!,
+            new ScrumPokerTransferOwnershipRequest({
+              ownerToken: session.value!.ownerToken,
+              participantId,
+            }),
+          )
+        : await client.scrumPokerTransferHost(
+            session.value!.roomCode!,
+            new ScrumPokerTransferHostRequest({
+              participantToken: session.value!.participantToken,
+              participantId,
+            }),
+          );
     } catch (error) {
       errorMessage.value =
         error instanceof Error
           ? error.message
-          : "Unable to transfer ownership.";
+          : isRoomOwner.value
+            ? "Unable to transfer ownership."
+            : "Unable to transfer host control.";
     } finally {
       actionLoading.value = false;
     }
@@ -1180,7 +1300,7 @@ function removeParticipant(participantId?: string, displayName?: string) {
       room.value = await client.scrumPokerRemoveParticipant(
         session.value!.roomCode!,
         new ScrumPokerRemoveParticipantRequest({
-          ownerToken: session.value!.participantToken,
+          ownerToken: session.value!.ownerToken,
           participantId,
         }),
       );
@@ -1336,14 +1456,6 @@ async function leaveRoom() {
   if (currentSession?.roomCode) joinCode.value = currentSession.roomCode;
   stopPolling();
   if (currentSession?.roomCode && currentSession.participantToken) {
-    localStorage.setItem(
-      identityStorageKey(currentSession.roomCode),
-      JSON.stringify({
-        participantId: currentSession.participantId,
-        participantToken: currentSession.participantToken,
-        displayName: participantName.value || displayName.value.trim(),
-      }),
-    );
     try {
       await client.scrumPokerLeave(currentSession.roomCode, {
         participantToken: currentSession.participantToken,
@@ -1372,11 +1484,6 @@ async function loadStoredSession() {
   try {
     const saved = JSON.parse(stored);
     session.value = saved.session ?? saved;
-    if (!session.value?.participantId) {
-      const identity = storedParticipantIdentity(code);
-      if (identity?.participantId)
-        session.value!.participantId = identity.participantId;
-    }
     participantName.value = saved.participantName ?? "";
     displayName.value = participantName.value;
     room.value = session.value?.room ?? null;
@@ -1407,6 +1514,8 @@ async function checkRoomAvailability() {
 }
 
 onMounted(async () => {
+  clearLegacyParticipantIdentityStorage();
+  migrateLegacyOwnerTokens();
   await fuseStore.fetchStatus();
   await loadStoredSession();
   await checkRoomAvailability();

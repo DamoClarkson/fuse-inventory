@@ -11,9 +11,12 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 
     private const int RoomCodeLength = 8;
     private const int ParticipantTokenLength = 32;
+    private static readonly TimeSpan RetainedMetadataLifetime = TimeSpan.FromDays(30);
+    private const int MaxRetainedMetadata = 10_000;
     private const string RoomCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private readonly object _roomsLock = new();
     private readonly Dictionary<string, RoomState> _rooms = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, RetainedRoomMetadata> _retainedMetadata = new(StringComparer.OrdinalIgnoreCase);
     private readonly TimeSpan _roomLifetime;
 
     public InMemoryScrumPokerStore(TimeSpan? roomLifetime = null)
@@ -28,6 +31,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         var nameResult = ValidateDisplayName(displayName);
         if (!nameResult.IsSuccess)
             return Result<ScrumPokerSession>.Failure(nameResult.Error!, nameResult);
+        var avatarResult = ValidateAvatarColor(avatarColor);
+        if (!avatarResult.IsSuccess)
+            return Result<ScrumPokerSession>.Failure(avatarResult.Error!, avatarResult);
 
         RoomState state;
         lock (_roomsLock)
@@ -39,18 +45,21 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             } while (_rooms.ContainsKey(roomCode));
 
             var participant = CreateParticipant(nameResult.Value!, utcNow, avatarColor);
-            state = new RoomState(roomCode, utcNow, participant);
+            state = new RoomState(roomCode, utcNow, participant, CreateOwnerToken());
             _rooms.Add(roomCode, state);
         }
 
         return Result<ScrumPokerSession>.Success(CreateSession(state));
     }
 
-    public Result<ScrumPokerSession> JoinRoom(string roomCode, string displayName, DateTime utcNow, string? participantToken = null, string? avatarColor = null, bool allowRemovedParticipantAsNew = false)
+    public Result<ScrumPokerSession> JoinRoom(string roomCode, string displayName, DateTime utcNow, string? participantToken = null, string? avatarColor = null, bool allowRemovedParticipantAsNew = false, string? ownerToken = null)
     {
         var nameResult = ValidateDisplayName(displayName);
         if (!nameResult.IsSuccess)
             return Result<ScrumPokerSession>.Failure(nameResult.Error!, nameResult);
+        var avatarResult = ValidateAvatarColor(avatarColor);
+        if (!avatarResult.IsSuccess)
+            return Result<ScrumPokerSession>.Failure(avatarResult.Error!, avatarResult);
 
         var state = FindActiveRoom(roomCode, utcNow);
         if (state is null)
@@ -58,12 +67,6 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 
         lock (state.Gate)
         {
-            if (state.Participants.Values.Any(p => string.Equals(p.DisplayName, nameResult.Value, StringComparison.OrdinalIgnoreCase)))
-                return Result<ScrumPokerSession>.Failure("That display name is already in use in this room.", ErrorType.Conflict);
-
-            if (state.Participants.Count >= MaxParticipantsPerRoom)
-                return Result<ScrumPokerSession>.Failure("The room is full.", ErrorType.Conflict);
-
             var participant = state.KnownParticipants.Values.FirstOrDefault(p =>
                 participantToken is not null && FixedTimeEquals(p.Token, participantToken));
             if (participant is not null && state.RemovedParticipantTokens.Contains(participant.Token))
@@ -75,7 +78,21 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             }
 
             if (participant is not null && state.Participants.ContainsKey(participant.Id))
-                return Result<ScrumPokerSession>.Failure("That participant is already in the room.", ErrorType.Conflict);
+            {
+                participant = participant with
+                {
+                    DisplayName = nameResult.Value!,
+                    AvatarColor = avatarColor ?? participant.AvatarColor,
+                    LastSeenUtc = utcNow
+                };
+                state.Participants[participant.Id] = participant;
+                state.KnownParticipants[participant.Id] = participant;
+                state.LastActivityUtc = utcNow;
+                return Result<ScrumPokerSession>.Success(CreateSession(state, participant));
+            }
+
+            if (state.Participants.Count >= MaxParticipantsPerRoom)
+                return Result<ScrumPokerSession>.Failure("The room is full.", ErrorType.Conflict);
 
             participant = participant is null
                 ? CreateParticipant(nameResult.Value!, utcNow, avatarColor)
@@ -87,6 +104,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
                 };
             state.Participants.Add(participant.Id, participant);
             state.KnownParticipants[participant.Id] = participant;
+            if (FixedTimeEquals(state.OwnerToken, ownerToken) &&
+                (state.OwnerId == Guid.Empty || !state.Participants.ContainsKey(state.OwnerId)))
+                state.OwnerId = participant.Id;
             if (state.CurrentHostId is null || participant.Id == state.OwnerId)
                 state.CurrentHostId = participant.Id;
             state.LastActivityUtc = utcNow;
@@ -95,7 +115,7 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         }
     }
 
-    public Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow, string? participantToken = null, string? avatarColor = null)
+    public Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow, string? participantToken = null, string? avatarColor = null, string? ownerToken = null)
     {
         var nameResult = ValidateDisplayName(displayName);
         if (!nameResult.IsSuccess)
@@ -112,14 +132,22 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
                 lock (existingRoom.Gate)
                 {
                     if (!IsExpired(existingRoom, utcNow))
-                        return JoinRoom(normalizedCode, nameResult.Value!, utcNow, participantToken, avatarColor);
+                        return JoinRoom(normalizedCode, nameResult.Value!, utcNow, participantToken, avatarColor, ownerToken: ownerToken);
                 }
 
+                _retainedMetadata[normalizedCode] = new RetainedRoomMetadata(existingRoom.OwnerToken, utcNow);
                 _rooms.Remove(normalizedCode);
             }
 
             var participant = CreateParticipant(nameResult.Value!, utcNow, avatarColor);
-            var state = new RoomState(normalizedCode, utcNow, participant);
+            var retainedOwnerToken = GetRetainedOwnerToken(normalizedCode, utcNow);
+            var state = new RoomState(normalizedCode, utcNow, participant, retainedOwnerToken ?? CreateOwnerToken());
+            if (retainedOwnerToken is null)
+                _retainedMetadata.Remove(normalizedCode);
+            else if (FixedTimeEquals(retainedOwnerToken, ownerToken))
+                state.OwnerId = participant.Id;
+            else
+                state.OwnerId = Guid.Empty;
             _rooms.Add(normalizedCode, state);
             return Result<ScrumPokerSession>.Success(CreateSession(state));
         }
@@ -336,16 +364,13 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 
     public Result<ScrumPokerRoom> RemoveParticipant(string roomCode, string ownerToken, Guid participantId, DateTime utcNow)
     {
-        var stateResult = GetParticipantRoom(roomCode, ownerToken, utcNow);
+        var stateResult = GetOwnerRoom(roomCode, ownerToken, utcNow);
         if (!stateResult.IsSuccess)
             return Result<ScrumPokerRoom>.Failure(stateResult.Error!, stateResult);
 
         var (state, owner) = stateResult.Value!;
         lock (state.Gate)
         {
-            if (owner.Id != state.OwnerId)
-                return Result<ScrumPokerRoom>.Failure("Only the room owner can remove participants.", ErrorType.Unauthorized);
-
             if (participantId == state.OwnerId)
                 return Result<ScrumPokerRoom>.Failure("The room owner cannot be removed.");
 
@@ -369,19 +394,39 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 
     public Result<ScrumPokerRoom> TransferOwnership(string roomCode, string ownerToken, Guid participantId, DateTime utcNow)
     {
-        var stateResult = GetParticipantRoom(roomCode, ownerToken, utcNow);
+        var stateResult = GetOwnerRoom(roomCode, ownerToken, utcNow);
         if (!stateResult.IsSuccess)
             return Result<ScrumPokerRoom>.Failure(stateResult.Error!, stateResult);
 
         var (state, owner) = stateResult.Value!;
         lock (state.Gate)
         {
-            if (owner.Id != state.OwnerId)
-                return Result<ScrumPokerRoom>.Failure("Only the room owner can transfer ownership.", ErrorType.Unauthorized);
             if (!state.Participants.ContainsKey(participantId))
                 return Result<ScrumPokerRoom>.Failure("The new owner must be an active participant.", ErrorType.NotFound);
 
             state.OwnerId = participantId;
+            state.OwnerToken = CreateOwnerToken();
+            state.CurrentHostId = participantId;
+            state.LastActivityUtc = utcNow;
+            state.Revision++;
+            return Result<ScrumPokerRoom>.Success(CreateRoomSnapshot(state));
+        }
+    }
+
+    public Result<ScrumPokerRoom> TransferHost(string roomCode, string participantToken, Guid participantId, DateTime utcNow)
+    {
+        var stateResult = GetParticipantRoom(roomCode, participantToken, utcNow);
+        if (!stateResult.IsSuccess)
+            return Result<ScrumPokerRoom>.Failure(stateResult.Error!, stateResult);
+
+        var (state, participant) = stateResult.Value!;
+        lock (state.Gate)
+        {
+            if (participant.Id != state.CurrentHostId || participant.Id == state.OwnerId)
+                return Result<ScrumPokerRoom>.Failure("Only a temporary host can transfer host control.", ErrorType.Unauthorized);
+            if (!state.Participants.ContainsKey(participantId))
+                return Result<ScrumPokerRoom>.Failure("The new host must be an active participant.", ErrorType.NotFound);
+
             state.CurrentHostId = participantId;
             state.LastActivityUtc = utcNow;
             state.Revision++;
@@ -397,6 +442,19 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             : normalized.Length > MaxDisplayNameLength
                 ? Result<string>.Failure($"Display names must be {MaxDisplayNameLength} characters or fewer.")
                 : Result<string>.Success(normalized);
+    }
+
+    private static Result<string?> ValidateAvatarColor(string? avatarColor)
+    {
+        if (avatarColor is null)
+            return Result<string?>.Success(null);
+
+        var normalized = avatarColor.Trim().ToLowerInvariant();
+        return normalized.StartsWith("avatar-image-") &&
+               int.TryParse(normalized[13..], out var imageNumber) && imageNumber is >= 1 and <= 18 ||
+               normalized.Length == 7 && normalized[0] == '#' && normalized[1..].All(Uri.IsHexDigit)
+            ? Result<string?>.Success(normalized)
+            : Result<string?>.Failure("The avatar color is invalid.");
     }
 
     private static string? NormalizeRoomCode(string roomCode)
@@ -421,7 +479,9 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
             {
                 if (IsExpired(state, utcNow))
                 {
+                    _retainedMetadata[state.RoomCode] = new RetainedRoomMetadata(state.OwnerToken, utcNow);
                     _rooms.Remove(state.RoomCode);
+                    CleanupRetainedMetadata(utcNow);
                     return null;
                 }
 
@@ -454,14 +514,59 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         }
     }
 
-    private static ScrumPokerParticipant CreateParticipant(string displayName, DateTime utcNow, string? avatarColor) =>
-        new(Guid.NewGuid(), displayName, RandomString("", ParticipantTokenLength), avatarColor, null, utcNow);
+    private Result<(RoomState State, ScrumPokerParticipant Participant)> GetOwnerRoom(string roomCode, string ownerToken, DateTime utcNow)
+    {
+        var state = FindActiveRoom(roomCode, utcNow);
+        if (state is null)
+            return Result<(RoomState, ScrumPokerParticipant)>.Failure("Room was not found or has expired.", ErrorType.NotFound);
 
-    private static ScrumPokerSession CreateSession(RoomState state, ScrumPokerParticipant? participant = null) =>
-        new(CreateRoomSnapshot(state), participant ?? state.Participants.Values.First());
+        lock (state.Gate)
+        {
+            if (!FixedTimeEquals(state.OwnerToken, ownerToken) || state.OwnerId == Guid.Empty ||
+                !state.Participants.TryGetValue(state.OwnerId, out var owner))
+                return Result<(RoomState, ScrumPokerParticipant)>.Failure("Only the room owner can perform this action.", ErrorType.Unauthorized);
+            return Result<(RoomState, ScrumPokerParticipant)>.Success((state, owner));
+        }
+    }
+
+    private static ScrumPokerParticipant CreateParticipant(string displayName, DateTime utcNow, string? avatarColor) =>
+        new(Guid.NewGuid(), displayName, RandomString("", ParticipantTokenLength), avatarColor?.Trim().ToLowerInvariant(), null, utcNow);
+
+    private static string CreateOwnerToken() => Guid.NewGuid().ToString("N");
+
+    private static ScrumPokerSession CreateSession(RoomState state, ScrumPokerParticipant? participant = null)
+    {
+        var selectedParticipant = participant ?? state.Participants.Values.First();
+        return new(CreateRoomSnapshot(state), selectedParticipant,
+            selectedParticipant.Id == state.OwnerId ? state.OwnerToken : null);
+    }
 
     private static ScrumPokerRoom CreateRoomSnapshot(RoomState state) =>
-        new(state.RoomCode, state.OwnerId, state.CurrentHostId, state.Round, state.Phase, state.AutoReveal, state.LockVotesAfterReveal, state.Revision, state.CreatedUtc, state.LastActivityUtc, state.Participants.Values.ToArray());
+        new(state.RoomCode, state.OwnerId, state.OwnerToken, state.CurrentHostId, state.Round, state.Phase, state.AutoReveal, state.LockVotesAfterReveal, state.Revision, state.CreatedUtc, state.LastActivityUtc, state.Participants.Values.ToArray());
+
+    private string? GetRetainedOwnerToken(string roomCode, DateTime utcNow)
+    {
+        CleanupRetainedMetadata(utcNow);
+        return _retainedMetadata.TryGetValue(roomCode, out var metadata)
+            ? metadata.OwnerToken
+            : null;
+    }
+
+    private void CleanupRetainedMetadata(DateTime utcNow)
+    {
+        foreach (var roomCode in _retainedMetadata
+                     .Where(entry => utcNow - entry.Value.LastUsedUtc >= RetainedMetadataLifetime)
+                     .Select(entry => entry.Key)
+                     .ToArray())
+            _retainedMetadata.Remove(roomCode);
+
+        foreach (var roomCode in _retainedMetadata
+                     .OrderBy(entry => entry.Value.LastUsedUtc)
+                     .Skip(MaxRetainedMetadata)
+                     .Select(entry => entry.Key)
+                     .ToArray())
+            _retainedMetadata.Remove(roomCode);
+    }
 
     private static Guid? SelectNextParticipant(RoomState state, Guid departingParticipantId) =>
         state.Participants.Keys.FirstOrDefault(id => id != departingParticipantId) is var next && next != Guid.Empty
@@ -497,12 +602,13 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         return expectedBytes.Length == actualBytes.Length && CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
     }
 
-    private sealed class RoomState(string roomCode, DateTime createdUtc, ScrumPokerParticipant owner)
+    private sealed class RoomState(string roomCode, DateTime createdUtc, ScrumPokerParticipant owner, string ownerToken)
     {
         public object Gate { get; } = new();
         public string RoomCode { get; } = roomCode;
         public DateTime CreatedUtc { get; } = createdUtc;
         public Guid OwnerId { get; set; } = owner.Id;
+        public string OwnerToken { get; set; } = ownerToken;
         public Guid? CurrentHostId { get; set; } = owner.Id;
         public DateTime LastActivityUtc { get; set; } = createdUtc;
         public int Round { get; set; } = 1;
@@ -514,4 +620,6 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         public Dictionary<Guid, ScrumPokerParticipant> KnownParticipants { get; } = new() { [owner.Id] = owner };
         public HashSet<string> RemovedParticipantTokens { get; } = new(StringComparer.Ordinal);
     }
+
+    private sealed record RetainedRoomMetadata(string OwnerToken, DateTime LastUsedUtc);
 }
