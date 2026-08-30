@@ -828,6 +828,7 @@ function storageKey(code: string) {
 const ownerTokensStorageKey = "fuse:scrum-poker-owner-tokens";
 const legacyOwnerTokenStoragePrefix = "fuse:scrum-poker-owner:";
 const ownerTokenLifetimeMs = 30 * 24 * 60 * 60 * 1000;
+const leaveRequestSent = ref(false);
 function clearLegacyParticipantIdentityStorage() {
   const prefix = "fuse:scrum-poker-identity:";
   for (const storage of [localStorage, sessionStorage]) {
@@ -986,6 +987,7 @@ async function runSessionAction(
   try {
     const result = await action();
     if (enteringExistingRoom) roomEntryStatus.value = "unknown";
+    leaveRequestSent.value = false;
     session.value = result;
     room.value = result.room ?? null;
     participantName.value = displayName.value.trim();
@@ -1456,6 +1458,7 @@ async function leaveRoom() {
   if (currentSession?.roomCode) joinCode.value = currentSession.roomCode;
   stopPolling();
   if (currentSession?.roomCode && currentSession.participantToken) {
+    leaveRequestSent.value = true;
     try {
       await client.scrumPokerLeave(currentSession.roomCode, {
         participantToken: currentSession.participantToken,
@@ -1470,6 +1473,32 @@ async function leaveRoom() {
   selectedCard.value = null;
   participantName.value = "";
   await router.replace({ name: "scrumPoker" });
+}
+
+function leaveRoomOnPageHide(event: PageTransitionEvent) {
+  if (event.persisted || leaveRequestSent.value) return;
+
+  const currentSession = session.value;
+  if (!currentSession?.roomCode || !currentSession.participantToken) return;
+
+  leaveRequestSent.value = true;
+  const body = new Blob(
+    [JSON.stringify({ participantToken: currentSession.participantToken })],
+    { type: "application/json" },
+  );
+  const endpoint = apiUrl(
+    `/api/scrum-poker/rooms/${encodeURIComponent(currentSession.roomCode)}/leave`,
+  );
+  if (!navigator.sendBeacon(endpoint, body)) {
+    void fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        participantToken: currentSession.participantToken,
+      }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }
 }
 
 async function loadStoredSession() {
@@ -1514,6 +1543,7 @@ async function checkRoomAvailability() {
 }
 
 onMounted(async () => {
+  window.addEventListener("pagehide", leaveRoomOnPageHide);
   clearLegacyParticipantIdentityStorage();
   migrateLegacyOwnerTokens();
   await fuseStore.fetchStatus();
@@ -1544,6 +1574,7 @@ watch(
   { immediate: true },
 );
 onBeforeUnmount(() => {
+  window.removeEventListener("pagehide", leaveRoomOnPageHide);
   stopPolling();
 });
 </script>
@@ -2157,7 +2188,7 @@ onBeforeUnmount(() => {
 
 .participant-transfer-btn,
 .participant-remove-btn {
-  color: #d3d9e1;
+  color: #9da1a779;
   margin-right: 1em;
 }
 
