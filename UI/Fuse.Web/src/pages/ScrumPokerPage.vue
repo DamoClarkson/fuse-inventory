@@ -1444,6 +1444,39 @@ async function setLockVotesAfterRevealOnServer(
 
 async function leaveRoom() {
   const currentSession = session.value;
+
+  // Fetch a fresh owner token if ownership was transferred to us since the last poll.
+  if (
+    currentSession?.roomCode &&
+    currentSession.participantToken &&
+    !currentSession.ownerToken
+  ) {
+    try {
+      const fresh = await client.scrumPokerState(
+        currentSession.roomCode,
+        currentSession.participantToken,
+      );
+      if (
+        sameParticipantId(
+          currentSession.participantId,
+          fresh.ownerParticipantId,
+        )
+      ) {
+        const ownerSession = await client.scrumPokerRoomsEnter(
+          currentSession.roomCode,
+          {
+            displayName: participantName.value || displayName.value.trim(),
+            participantToken: currentSession.participantToken,
+          } as any,
+        );
+        if (ownerSession.ownerToken)
+          storeOwnerToken(currentSession.roomCode, ownerSession.ownerToken);
+      }
+    } catch {
+      // Non-critical — proceed with leave.
+    }
+  }
+
   if (currentSession?.roomCode) joinCode.value = currentSession.roomCode;
   stopPolling();
   if (currentSession?.roomCode && currentSession.participantToken) {
