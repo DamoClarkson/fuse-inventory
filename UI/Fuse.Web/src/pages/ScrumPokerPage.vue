@@ -52,7 +52,11 @@
           <div class="section-kicker">Collaborative estimation</div>
           <div class="join-title">Create or join a room</div>
           <div class="join-copy">
-            Choose a display name, then share the room with your team.
+            {{
+              hasRoomCode
+                ? "Enter your details to join with the room code below."
+                : "Choose a display name, then share the room with your team."
+            }}
           </div>
         </div>
       </q-card-section>
@@ -63,11 +67,7 @@
           label="Your display name"
           maxlength="50"
           counter
-          @keyup.enter="
-            roomCodeFromUrl && roomEntryStatus !== 'expired'
-              ? enterRoom()
-              : createRoom()
-          "
+          @keyup.enter="submitRoomEntry"
         />
         <div class="avatar-picker q-mt-md">
           <div class="avatar-picker__label avatar-picker__label--images">
@@ -97,33 +97,27 @@
             </button>
           </div>
         </div>
-        <q-banner
-          v-if="roomCodeFromUrl"
-          rounded
-          dense
-          :class="[
-            'q-mt-md',
-            'room-notice',
-            { 'banner-error': roomEntryStatus === 'expired' },
-          ]"
-        >
-          <template v-if="roomEntryStatus === 'expired'">
-            Room <strong>{{ roomCodeFromUrl }}</strong> no longer exists.
-          </template>
-          <template v-else>
-            Entering existing room <strong>{{ roomCodeFromUrl }}</strong
-            >.
-          </template>
-        </q-banner>
         <q-input
-          v-else
           v-model="joinCode"
           outlined
-          label="Room code (optional)"
+          label="Existing room code"
           class="q-mt-md"
           maxlength="20"
-          @keyup.enter="joinRoom"
-        />
+          @keyup.enter="submitRoomEntry"
+        >
+          <template v-if="hasRoomCode" #append>
+            <q-btn
+              flat
+              round
+              dense
+              icon="close"
+              aria-label="Clear room code"
+              @click="clearRoomCode"
+            >
+              <q-tooltip>Clear room code</q-tooltip>
+            </q-btn>
+          </template>
+        </q-input>
         <q-banner
           v-if="errorMessage"
           rounded
@@ -133,44 +127,26 @@
         >
       </q-card-section>
       <q-card-actions class="join-actions">
-        <template v-if="roomCodeFromUrl">
+        <q-btn
+          class="join-submit-btn"
+          size="lg"
+          unelevated
+          color="primary"
+          :label="hasRoomCode ? 'Join room' : 'Create room'"
+          :disable="!canSubmit"
+          :loading="loading"
+          @click="submitRoomEntry"
+        />
+        <div v-if="hasRoomCode" class="create-room-link-slot">
           <q-btn
-            v-if="roomEntryStatus !== 'expired'"
-            unelevated
-            color="primary"
-            label="Enter room"
-            :disable="!canSubmit"
-            :loading="loading"
-            @click="enterRoom"
-          />
-          <q-btn
-            v-else
-            unelevated
-            color="primary"
-            label="Enter room"
-            :disable="!canSubmit"
-            :loading="loading"
-            @click="enterRoom"
-          />
-        </template>
-        <template v-else>
-          <q-btn
+            class="create-room-btn"
             flat
-            color="grey-8"
-            label="Join existing room"
-            :disable="!canSubmit || !joinCode"
-            :loading="loading"
-            @click="joinRoom"
-          />
-          <q-btn
-            unelevated
+            dense
             color="primary"
-            label="Create new room"
-            :disable="!canSubmit"
-            :loading="loading"
+            label="Create a new room instead"
             @click="createRoom"
           />
-        </template>
+        </div>
       </q-card-actions>
     </q-card>
 
@@ -594,7 +570,6 @@ const lockVotesAfterReveal = ref(false);
 const lockVotesAfterRevealSaving = ref(false);
 const roomName = ref("");
 const errorMessage = ref("");
-const roomEntryStatus = ref<"unknown" | "expired">("unknown");
 const selectedCard = ref<ScrumPokerCard | null>(null);
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 let ownerRecoveryInFlight = false;
@@ -603,17 +578,13 @@ const featureEnabled = computed(
   () => fuseStore.appSettings?.scrumPokerEnabled === true,
 );
 const isDark = computed(() => $q.dark.isActive);
-const roomCodeFromUrl = computed(() =>
-  typeof route.params.roomCode === "string"
-    ? route.params.roomCode.toUpperCase()
-    : "",
-);
 const canSubmit = computed(
   () =>
     displayName.value.trim().length > 0 &&
     displayName.value.trim().length <= 50 &&
     selectedAvatarColor.value !== null,
 );
+const hasRoomCode = computed(() => joinCode.value.trim().length > 0);
 const currentParticipantId = computed(() => session.value?.participantId);
 const isRoomOwner = computed(
   () =>
@@ -955,7 +926,12 @@ function editRoomName() {
 }
 
 async function createRoom() {
-  if (!canSubmit.value) return;
+  if (!canSubmit.value) {
+    errorMessage.value =
+      "Enter a display name and choose an avatar before creating a room.";
+    return;
+  }
+  joinCode.value = "";
   await runSessionAction(() =>
     client.scrumPokerRoomsPOST({
       displayName: displayName.value.trim(),
@@ -976,28 +952,26 @@ async function joinRoom() {
   );
 }
 
-async function enterRoom() {
-  if (!canSubmit.value || !roomCodeFromUrl.value) return;
-  await runSessionAction(
-    () =>
-      client.scrumPokerRoomsEnter(roomCodeFromUrl.value, {
-        displayName: displayName.value.trim(),
-        ownerToken: storedOwnerToken(roomCodeFromUrl.value),
-        avatarColor: selectedAvatarColor.value!,
-      } as any),
-    true,
-  );
+function clearRoomCode() {
+  joinCode.value = "";
+  errorMessage.value = "";
+}
+
+function submitRoomEntry() {
+  if (hasRoomCode.value) {
+    void joinRoom();
+  } else {
+    void createRoom();
+  }
 }
 
 async function runSessionAction(
   action: () => Promise<ScrumPokerSessionResponse>,
-  enteringExistingRoom = false,
 ) {
   loading.value = true;
   errorMessage.value = "";
   try {
     const result = await action();
-    if (enteringExistingRoom) roomEntryStatus.value = "unknown";
     leaveRequestSent.value = false;
     session.value = result;
     room.value = result.room ?? null;
@@ -1029,15 +1003,6 @@ async function runSessionAction(
     await nextTick();
     showEntranceSplash.value = true;
   } catch (error) {
-    if (
-      enteringExistingRoom &&
-      ((error instanceof ApiException && error.status === 404) ||
-        (error instanceof Error &&
-          /404|not found|expired/i.test(error.message)))
-    ) {
-      removeOwnerToken(roomCodeFromUrl.value || joinCode.value);
-      roomEntryStatus.value = "expired";
-    }
     errorMessage.value = sessionActionError(error, "Unable to join the room.");
   } finally {
     loading.value = false;
@@ -1531,7 +1496,7 @@ async function loadStoredSession() {
   if (!code) return;
   const stored = sessionStorage.getItem(storageKey(code));
   if (!stored) {
-    joinCode.value = code;
+    joinCode.value = normalizedRoomCode(code);
     return;
   }
   try {
@@ -1548,41 +1513,24 @@ async function loadStoredSession() {
   }
 }
 
-async function checkRoomAvailability() {
-  if (session.value || !roomCodeFromUrl.value) return;
-
-  try {
-    const response = await fetch(
-      apiUrl(
-        `/api/scrum-poker/rooms/${encodeURIComponent(roomCodeFromUrl.value)}/availability`,
-      ),
-    );
-    if (response.ok) {
-      const result = (await response.json()) as { exists?: boolean };
-      if (result.exists === false) roomEntryStatus.value = "expired";
-    }
-  } catch {
-    // Keep the neutral entry state when availability cannot be checked.
-  }
-}
-
 onMounted(async () => {
   window.addEventListener("pagehide", leaveRoomOnPageHide);
   clearLegacyParticipantIdentityStorage();
   migrateLegacyOwnerTokens();
   await fuseStore.fetchStatus();
   await loadStoredSession();
-  await checkRoomAvailability();
 });
 watch(
   () => route.params.roomCode,
   () => {
     if (!session.value) {
-      roomEntryStatus.value = "unknown";
-      void loadStoredSession().then(checkRoomAvailability);
+      void loadStoredSession();
     }
   },
 );
+watch(joinCode, (code) => {
+  if (!code.trim()) errorMessage.value = "";
+});
 watch(
   roomAutoReveal,
   (enabled) => {
@@ -1841,9 +1789,27 @@ onBeforeUnmount(() => {
 }
 
 .join-actions {
-  justify-content: flex-end;
+  align-items: stretch;
+  flex-direction: column;
   gap: 0.5rem;
+  min-height: 5.25rem;
   padding: 0 2rem 1.75rem;
+}
+
+.create-room-link-slot {
+  min-height: 2.25rem;
+  display: flex;
+  align-items: flex-start;
+}
+
+.create-room-btn {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.join-submit-btn {
+  width: 100%;
+  margin-top: 0.35rem;
 }
 
 .room-notice {
