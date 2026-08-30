@@ -8,10 +8,11 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 {
     public const int MaxParticipantsPerRoom = 20;
     public const int MaxDisplayNameLength = 50;
+    public static readonly TimeSpan ParticipantTimeout = TimeSpan.FromSeconds(10);
 
     private const int RoomCodeLength = 8;
     private const int ParticipantTokenLength = 32;
-    private static readonly TimeSpan RetainedMetadataLifetime = TimeSpan.FromDays(30);
+    private static readonly TimeSpan RetainedMetadataLifetime = TimeSpan.FromDays(60);
     private const int MaxRetainedMetadata = 10_000;
     private const string RoomCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private readonly object _roomsLock = new();
@@ -164,8 +165,15 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         var (state, participant) = stateResult.Value!;
         lock (state.Gate)
         {
+            // Update caller first so they are never evicted by their own poll.
             state.Participants[participant.Id] = participant with { LastSeenUtc = utcNow };
             state.LastActivityUtc = utcNow;
+            EvictStaleParticipants(state, utcNow);
+            if (state.AutoReveal && state.Phase == ScrumPokerPhase.Voting && HasEveryoneVoted(state))
+            {
+                state.Phase = ScrumPokerPhase.Revealed;
+                state.Revision++;
+            }
             return Result<ScrumPokerRoom>.Success(CreateRoomSnapshot(state));
         }
     }
@@ -572,6 +580,28 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         state.Participants.Keys.FirstOrDefault(id => id != departingParticipantId) is var next && next != Guid.Empty
             ? next
             : null;
+
+    private static void EvictStaleParticipants(RoomState state, DateTime utcNow)
+    {
+        var staleIds = state.Participants
+            .Where(kvp => utcNow - kvp.Value.LastSeenUtc >= ParticipantTimeout)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        if (staleIds.Count == 0)
+            return;
+
+        foreach (var id in staleIds)
+            state.Participants.Remove(id);
+
+        if (state.CurrentHostId.HasValue && !state.Participants.ContainsKey(state.CurrentHostId.Value))
+            state.CurrentHostId = state.Participants.ContainsKey(state.OwnerId)
+                ? state.OwnerId
+                : state.Participants.Count > 0 ? state.Participants.Keys.First() : null;
+
+        state.LastActivityUtc = utcNow;
+        state.Revision++;
+    }
 
     private static bool HasEveryoneVoted(RoomState state) =>
         state.Participants.Count > 0 && state.Participants.Values.All(participant => participant.SelectedCard is not null);

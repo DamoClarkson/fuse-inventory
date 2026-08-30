@@ -186,4 +186,40 @@ public sealed class InMemoryScrumPokerStoreTests
         Assert.NotEqual(original.Room.OwnerToken, forgotten.Room.OwnerToken);
         Assert.Equal(forgotten.Participant.Id, forgotten.Room.OwnerParticipantId);
     }
+
+    [Fact]
+    public void GetRoom_EvictsParticipantWhoStoppedPolling()
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Damian", now).Value!;
+        var sarah = store.JoinRoom(owner.Room.RoomCode, "Sarah", now.AddSeconds(1)).Value!;
+
+        // Sarah stops polling; owner polls after the timeout window.
+        var pollTime = now.AddSeconds(1) + InMemoryScrumPokerStore.ParticipantTimeout + TimeSpan.FromSeconds(1);
+        var room = store.GetRoom(owner.Room.RoomCode, owner.Participant.Token, pollTime).Value!;
+
+        Assert.DoesNotContain(room.Participants, p => p.Id == sarah.Participant.Id);
+        Assert.Equal(owner.Participant.Id, room.CurrentHostParticipantId);
+    }
+
+    [Fact]
+    public void GetRoom_EvictsStaleHost_TransfersHostToOwner()
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var owner = store.CreateRoom("Damian", now).Value!;
+        var sarah = store.JoinRoom(owner.Room.RoomCode, "Sarah", now.AddSeconds(1)).Value!;
+
+        // Owner leaves so Sarah becomes temporary host.
+        store.Leave(owner.Room.RoomCode, owner.Participant.Token, now.AddSeconds(2));
+
+        // Owner rejoins, then Sarah stops polling.
+        store.JoinRoom(owner.Room.RoomCode, "Damian", now.AddSeconds(3), owner.Participant.Token);
+        var pollTime = now.AddSeconds(1) + InMemoryScrumPokerStore.ParticipantTimeout + TimeSpan.FromSeconds(1);
+        var room = store.GetRoom(owner.Room.RoomCode, owner.Participant.Token, pollTime).Value!;
+
+        Assert.DoesNotContain(room.Participants, p => p.Id == sarah.Participant.Id);
+        Assert.Equal(owner.Participant.Id, room.CurrentHostParticipantId);
+    }
 }

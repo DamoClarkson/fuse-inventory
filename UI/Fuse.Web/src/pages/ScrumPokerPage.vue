@@ -798,7 +798,7 @@ function storageKey(code: string) {
 }
 const ownerTokensStorageKey = "fuse:scrum-poker-owner-tokens";
 const legacyOwnerTokenStoragePrefix = "fuse:scrum-poker-owner:";
-const ownerTokenLifetimeMs = 30 * 24 * 60 * 60 * 1000;
+const ownerTokenLifetimeMs = 60 * 24 * 60 * 60 * 1000;
 const leaveRequestSent = ref(false);
 function clearLegacyParticipantIdentityStorage() {
   const prefix = "fuse:scrum-poker-identity:";
