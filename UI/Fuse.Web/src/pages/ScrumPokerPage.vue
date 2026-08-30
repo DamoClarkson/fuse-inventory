@@ -930,12 +930,23 @@ function editRoomName() {
 
   Dialog.create({
     title: "Edit room name",
+    color: "primary",
     prompt: {
       model: roomName.value || `Sprint ${room.value?.round ?? 1} planning`,
       type: "text",
+      color: "primary",
       maxlength: 80,
     },
-    cancel: true,
+    ok: {
+      color: "primary",
+      unelevated: true,
+      label: "Save",
+    },
+    cancel: {
+      label: "Cancel",
+      color: "primary",
+      flat: true,
+    },
     persistent: true,
   }).onOk((name: string) => {
     const trimmedName = name.trim();
@@ -1253,7 +1264,12 @@ function transferHost(participantId?: string, displayName?: string) {
     message: `Make ${displayName || "this participant"} the ${
       isRoomOwner.value ? "owner" : "host"
     }?`,
-    cancel: true,
+    cancel: {
+      label: "Cancel",
+      color: "primary",
+      flat: true,
+    },
+    ok: { color: "primary" },
     persistent: true,
   }).onOk(async () => {
     actionLoading.value = true;
@@ -1293,7 +1309,15 @@ function removeParticipant(participantId?: string, displayName?: string) {
   Dialog.create({
     title: "Remove participant?",
     message: `Remove ${displayName || "this participant"} from the room?`,
-    cancel: true,
+    ok: {
+      color: "primary",
+      unelevated: true,
+    },
+    cancel: {
+      label: "Cancel",
+      color: "primary",
+      flat: true,
+    },
     persistent: true,
   }).onOk(async () => {
     actionLoading.value = true;
@@ -2188,13 +2212,13 @@ onBeforeUnmount(() => {
 
 .participant-transfer-btn,
 .participant-remove-btn {
-  color: #9da1a779;
+  color: #a1a1a179;
   margin-right: 1em;
 }
 
 .participant-transfer-btn:hover,
 .participant-remove-btn:hover {
-  color: #7f8da0;
+  color: #909090;
 }
 
 .participant-summary {
