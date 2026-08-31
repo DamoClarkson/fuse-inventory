@@ -944,7 +944,7 @@ async function joinRoom() {
   if (!canSubmit.value || !joinCode.value.trim()) return;
   const code = joinCode.value.trim().toUpperCase();
   await runSessionAction(() =>
-    client.scrumPokerRoomsJoin(code, {
+    client.scrumPokerRoomsEnter(code, {
       displayName: displayName.value.trim(),
       ownerToken: storedOwnerToken(code),
       avatarColor: selectedAvatarColor.value!,
