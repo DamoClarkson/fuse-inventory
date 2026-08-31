@@ -174,14 +174,14 @@ public sealed class InMemoryScrumPokerStoreTests
     }
 
     [Fact]
-    public void ExpiredRoomMetadata_IsForgottenAfterThirtyDays()
-    {
-        var now = DateTime.UtcNow;
-        var store = new InMemoryScrumPokerStore();
-        var original = store.CreateRoom("Damian", now).Value!;
+public void ExpiredRoomMetadata_IsForgottenAfterSixtyDays()
+        {
+            var now = DateTime.UtcNow;
+            var store = new InMemoryScrumPokerStore();
+            var original = store.CreateRoom("Damian", now).Value!;
 
-        store.RoomExists(original.Room.RoomCode, now.AddHours(4).AddSeconds(1));
-        var forgotten = store.JoinOrCreateRoom(original.Room.RoomCode, "Taylor", now.AddHours(4).AddDays(30).AddSeconds(2)).Value!;
+            store.RoomExists(original.Room.RoomCode, now.AddHours(4).AddSeconds(1));
+            var forgotten = store.JoinOrCreateRoom(original.Room.RoomCode, "Taylor", now.AddHours(4).AddDays(60).AddSeconds(2)).Value!;
 
         Assert.NotEqual(original.Room.OwnerToken, forgotten.Room.OwnerToken);
         Assert.Equal(forgotten.Participant.Id, forgotten.Room.OwnerParticipantId);
